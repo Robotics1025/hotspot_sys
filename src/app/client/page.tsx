@@ -25,7 +25,7 @@ export default function ClientDashboard() {
         <DashboardLayout>
             <div className="flex flex-col gap-10">
                 {/* Welcome Header */}
-                <div className="relative h-64 bg-[#111111] rounded-[32px] overflow-hidden group">
+                <div className="relative h-64 bg-[#111111] rounded-4xl overflow-hidden group">
                     <div className="absolute inset-0 bg-gradient-to-r from-black/80 to-transparent z-10" />
                     <div className="absolute top-0 right-0 w-1/2 h-full bg-[url('https://images.unsplash.com/photo-1544197150-b99a580bb7a8?q=80&w=2070&auto=format&fit=crop')] bg-cover bg-center opacity-40 group-hover:scale-105 transition-transform duration-700" />
 
@@ -52,7 +52,7 @@ export default function ClientDashboard() {
                             </div>
                             <div className="grid grid-cols-3 gap-6">
                                 {stats.map((stat) => (
-                                    <div key={stat.name} className="bg-white p-6 rounded-[24px] border border-gray-100 hover:border-orange-200 transition-all hover:shadow-lg hover:shadow-orange-500/5 group">
+                                    <div key={stat.name} className="bg-white p-6 rounded-3xl border border-gray-100 hover:border-orange-200 transition-all hover:shadow-lg hover:shadow-orange-500/5 group">
                                         <div className="flex justify-between items-start mb-4">
                                             <div className={cn("p-3 rounded-2xl text-white", stat.color)}>
                                                 <stat.icon className="w-6 h-6" />
@@ -77,8 +77,8 @@ export default function ClientDashboard() {
                             </div>
                             <div className="grid grid-cols-3 gap-6">
                                 {popularPlans.map((plan) => (
-                                    <div key={plan.name} className="bg-white p-4 rounded-[32px] border border-gray-100 hover:border-orange-200 transition-all group overflow-hidden">
-                                        <div className={cn("relative h-48 rounded-[24px] mb-4 overflow-hidden", plan.color)}>
+                                    <div key={plan.name} className="bg-white p-4 rounded-4xl border border-gray-100 hover:border-orange-200 transition-all group overflow-hidden">
+                                        <div className={cn("relative h-48 rounded-3xl mb-4 overflow-hidden", plan.color)}>
                                             <div className="absolute inset-0 flex items-center justify-center opacity-20 transform -rotate-12">
                                                 <Ticket className="w-32 h-32" />
                                             </div>
@@ -104,7 +104,7 @@ export default function ClientDashboard() {
 
                     {/* Sidebar / Recent Activity */}
                     <div className="col-span-4 flex flex-col gap-10">
-                        <div className="bg-white p-8 rounded-[32px] border border-gray-100">
+                        <div className="bg-white p-8 rounded-4xl border border-gray-100">
                             <div className="flex items-center justify-between mb-6">
                                 <h2 className="text-lg font-bold font-outfit">Recent Sales</h2>
                                 <MoreHorizontal className="w-5 h-5 text-gray-400" />
@@ -154,7 +154,7 @@ export default function ClientDashboard() {
                                     Main Cafe, Plot 42, St. Sraties, Entebbe.
                                 </p>
                             </div>
-                            <div className="h-40 bg-gray-100 rounded-[24px] overflow-hidden bg-[url('https://images.unsplash.com/photo-1524661135-423995f22d0b?q=80&w=2074&auto=format&fit=crop')] bg-cover bg-center">
+                            <div className="h-40 bg-gray-100 rounded-3xl overflow-hidden bg-[url('https://images.unsplash.com/photo-1524661135-423995f22d0b?q=80&w=2074&auto=format&fit=crop')] bg-cover bg-center">
                                 <div className="w-full h-full bg-black/20 hover:bg-black/0 transition-all cursor-pointer" />
                             </div>
                         </div>

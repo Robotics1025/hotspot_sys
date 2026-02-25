@@ -1,7 +1,7 @@
 "use client"
 
 import DashboardLayout from "@/components/DashboardLayout"
-import { AdminGuard } from "@/components\AdminGuard"
+import { AdminGuard } from "@/components/AdminGuard"
 import { Router as RouterIcon, Signal, Wifi, Activity, MoreVertical, Plus, Settings, ShieldCheck, Building2, Clock } from "lucide-react"
 import { cn } from "@/lib/utils"
 import { useState, useEffect } from "react"

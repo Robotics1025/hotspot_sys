@@ -152,7 +152,7 @@ export default function AdminDashboard() {
                         { name: "Active Nodes", value: isLoadingStats ? "..." : statsData?.totalNodes.toString() || "0", change: "+4", icon: Router, color: "bg-indigo-500" },
                         { name: "Platform Commission", value: isLoadingStats ? "..." : `$${statsData?.totalCommission.toLocaleString() || "0"}`, change: "+$842", icon: Activity, color: "bg-orange-500" },
                     ].map((stat) => (
-                        <div key={stat.name} className="bg-white p-6 rounded-[32px] border border-gray-100 shadow-sm group">
+                        <div key={stat.name} className="bg-white p-6 rounded-4xl border border-gray-100 shadow-sm group">
 
                             <div className="flex justify-between items-start mb-4">
                                 <div className={cn("p-3 rounded-2xl text-white", stat.color)}>
@@ -287,7 +287,7 @@ export default function AdminDashboard() {
                             <div className="flex flex-col gap-3">
                                 <button
                                     onClick={() => setIsAddClientOpen(true)}
-                                    className="flex items-center justify-between p-5 bg-white/5 hover:bg-orange-500 rounded-[24px] transition-all group w-full text-left"
+                                    className="flex items-center justify-between p-5 bg-white/5 hover:bg-orange-500 rounded-3xl transition-all group w-full text-left"
                                 >
                                     <div className="flex items-center gap-4">
                                         <div className="w-10 h-10 bg-white/10 rounded-xl flex items-center justify-center text-orange-500 group-hover:text-white">
@@ -298,7 +298,7 @@ export default function AdminDashboard() {
                                     <ArrowUpRight className="w-4 h-4 opacity-0 group-hover:opacity-100 transition-opacity" />
                                 </button>
 
-                                <Link href="/admin/scripts" className="flex items-center justify-between p-5 bg-white/5 hover:bg-orange-500 rounded-[24px] transition-all group">
+                                <Link href="/admin/scripts" className="flex items-center justify-between p-5 bg-white/5 hover:bg-orange-500 rounded-3xl transition-all group">
                                     <div className="flex items-center gap-4">
                                         <div className="w-10 h-10 bg-white/10 rounded-xl flex items-center justify-center text-orange-500 group-hover:text-white">
                                             <Terminal className="w-5 h-5" />
