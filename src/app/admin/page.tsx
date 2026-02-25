@@ -324,7 +324,7 @@ export default function AdminDashboard() {
 
             {/* Add Client Overlay */}
             {isAddClientOpen && (
-                <div className="fixed inset-0 z-[100] flex items-center justify-center px-4">
+                <div className="fixed inset-0 z-[999] flex items-center justify-center px-4">
                     <div
                         className="absolute inset-0 bg-black/40 backdrop-blur-md animate-in fade-in duration-300"
                         onClick={resetModal}
@@ -360,7 +360,7 @@ export default function AdminDashboard() {
                                     <div className="space-y-6">
                                         <div className="group space-y-2">
                                             <label className="text-[10px] text-gray-400 font-black uppercase tracking-widest pl-2">Business Name</label>
-                                            <div className="flex items-center gap-4 bg-gray-50 border border-gray-100 rounded-[24px] px-6 py-5 focus-within:bg-white focus-within:border-orange-500 focus-within:ring-4 focus-within:ring-orange-500/5 transition-all outline-none">
+                                            <div className="flex items-center gap-4 bg-gray-50 border border-gray-100 rounded-3xl px-6 py-5 focus-within:bg-white focus-within:border-orange-500 focus-within:ring-4 focus-within:ring-orange-500/5 transition-all outline-none">
                                                 <Building2 className="w-5 h-5 text-gray-400 group-focus-within:text-orange-500" />
                                                 <input
                                                     required
@@ -375,7 +375,7 @@ export default function AdminDashboard() {
 
                                         <div className="group space-y-2">
                                             <label className="text-[10px] text-gray-400 font-black uppercase tracking-widest pl-2">Payout Phone Number</label>
-                                            <div className="flex items-center gap-4 bg-gray-50 border border-gray-100 rounded-[24px] px-6 py-5 focus-within:bg-white focus-within:border-orange-500 focus-within:ring-4 focus-within:ring-orange-500/5 transition-all outline-none">
+                                            <div className="flex items-center gap-4 bg-gray-50 border border-gray-100 rounded-3xl px-6 py-5 focus-within:bg-white focus-within:border-orange-500 focus-within:ring-4 focus-within:ring-orange-500/5 transition-all outline-none">
                                                 <Phone className="w-5 h-5 text-gray-400 group-focus-within:text-orange-500" />
                                                 <input
                                                     required
@@ -399,7 +399,7 @@ export default function AdminDashboard() {
                                         </button>
                                         <button
                                             type="submit"
-                                            className="flex-[2] flex items-center justify-center gap-2 px-8 py-5 bg-[#111111] text-white font-bold rounded-[22px] hover:bg-orange-500 transition-all shadow-xl shadow-black/10 group"
+                                            className="flex-2 flex items-center justify-center gap-2 px-8 py-5 bg-[#111111] text-white font-bold rounded-[22px] hover:bg-orange-500 transition-all shadow-xl shadow-black/10 group"
                                         >
                                             <Zap className="w-5 h-5 text-orange-500 group-hover:text-white transition-colors" />
                                             <span>Generate Credentials</span>
@@ -408,7 +408,7 @@ export default function AdminDashboard() {
                                 </form>
                             ) : (
                                 <div className="space-y-8 animate-in fade-in slide-in-from-bottom-4 duration-500">
-                                    <div className="bg-emerald-50 border border-emerald-100 rounded-[32px] p-8 space-y-4">
+                                    <div className="bg-emerald-50 border border-emerald-100 rounded-4xl p-8 space-y-4">
                                         <div className="flex items-center justify-between">
                                             <div className="space-y-1">
                                                 <p className="text-[10px] text-emerald-600 font-black uppercase tracking-widest">Login Username</p>
