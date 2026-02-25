@@ -144,7 +144,7 @@ export default function ClientDashboard() {
                         </div>
 
                         {/* Address / Router Card */}
-                        <div className="bg-white p-8 rounded-[32px] border border-gray-100">
+                        <div className="bg-white p-8 rounded-4xl border border-gray-100">
                             <h2 className="text-lg font-bold font-outfit mb-4">Site Location</h2>
                             <div className="flex items-start gap-3 mb-4">
                                 <div className="w-5 h-5 mt-1 text-orange-500">
