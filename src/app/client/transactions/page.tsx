@@ -1,6 +1,7 @@
 "use client"
 
 import DashboardLayout from "@/components/DashboardLayout"
+import { ClientGuard } from "@/components/ClientGuard"
 import { 
     DollarSign, 
     Search, 
@@ -55,7 +56,7 @@ const statusConfig = {
     failed: { label: 'Failed', color: 'bg-red-100 text-red-700', icon: X },
 };
 
-export default function ClientTransactionsPage() {
+function ClientTransactionsContent() {
     const [transactions, setTransactions] = useState<Transaction[]>([])
     const [summary, setSummary] = useState<TransactionSummary>({
         totalAmount: 0,
@@ -69,9 +70,6 @@ export default function ClientTransactionsPage() {
         limit: 30,
         totalPages: 0
     })
-    
-    // Note: In a real app, you'd get clientId from auth context
-    const clientId = 1; // Mock client ID
     
     // Filters
     const [filters, setFilters] = useState({
@@ -88,7 +86,6 @@ export default function ClientTransactionsPage() {
         try {
             setIsLoading(true)
             const params = new URLSearchParams({
-                clientId: clientId.toString(),
                 page: pagination.page.toString(),
                 limit: pagination.limit.toString(),
                 ...(filters.status && { status: filters.status }),
@@ -96,7 +93,7 @@ export default function ClientTransactionsPage() {
                 ...(filters.endDate && { endDate: filters.endDate }),
             })
 
-            const res = await fetch(`/api/admin/transactions?${params}`)
+            const res = await fetch(`/api/client/transactions?${params}`)
             const data: TransactionsResponse = await res.json()
             
             if (res.ok) {
@@ -114,7 +111,7 @@ export default function ClientTransactionsPage() {
     }
 
     const formatCurrency = (amount: string | number) => {
-        return `$${Number(amount).toFixed(2)}`
+        return `UGX ${Number(amount).toLocaleString()}`
     }
 
     const formatDate = (dateString: string) => {
@@ -182,7 +179,7 @@ export default function ClientTransactionsPage() {
                     <div className="bg-white p-6 rounded-4xl border border-gray-100 shadow-sm">
                         <div className="flex items-center justify-between">
                             <div>
-                                <p className="text-2xl font-bold text-gray-900">{transactions.length}</p>
+                                <p className="text-2xl font-bold text-gray-900">{pagination.total.toLocaleString()}</p>
                                 <p className="text-sm text-gray-500 mt-1">Total Transactions</p>
                             </div>
                             <div className="w-12 h-12 bg-orange-100 text-orange-600 rounded-4xl flex items-center justify-center">
@@ -369,5 +366,13 @@ export default function ClientTransactionsPage() {
                 </div>
             </div>
         </DashboardLayout>
+    )
+}
+
+export default function ClientTransactionsPage() {
+    return (
+        <ClientGuard>
+            <ClientTransactionsContent />
+        </ClientGuard>
     )
 }

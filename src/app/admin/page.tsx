@@ -2,7 +2,7 @@
 
 import Link from "next/link"
 import DashboardLayout from "@/components/DashboardLayout"
-import { AdminGuard } from "@/components/AdminGuard"
+// import { AdminGuard } from "@/components/AdminGuard"
 import {
     Users,
     Building2,
@@ -30,27 +30,38 @@ import {
 import { cn } from "@/lib/utils"
 import { useState, useEffect } from "react"
 
+interface MonthlyRevenue {
+    month: string;
+    revenue: number;
+    commission: number;
+}
+
 interface PlatformStats {
     totalClients: number;
     totalNodes: number;
     totalRevenue: number;
     totalCommission: number;
+    monthlyRevenue: MonthlyRevenue[];
 }
 
+interface ActivityEvent {
+    id: string;
+    type: "signup" | "payment";
+    title: string;
+    detail: string;
+    time: string | null;
+}
 
-const stats = [
-    { name: "Total Clients", value: "24", change: "+2", icon: Building2, color: "bg-blue-500" },
-    { name: "Total Revenue", value: "$45,280", change: "+12.5%", icon: DollarSign, color: "bg-emerald-500" },
-    { name: "Active Nodes", value: "86", change: "+4", icon: Router, color: "bg-indigo-500" },
-    { name: "Platform Commission", value: "$6,792", change: "+$842", icon: Activity, color: "bg-orange-500" },
-]
-
-const platformEvents = [
-    { id: 1, type: "signup", title: "New Client Onboarded", detail: "Serena Hotel & Resorts joined", time: "2 min ago", icon: Building2, iconColor: "text-blue-500" },
-    { id: 2, type: "payment", title: "Payment Received", detail: "$120.00 via PesaPal", time: "15 min ago", icon: DollarSign, iconColor: "text-emerald-500" },
-    { id: 3, type: "alert", title: "Router Offline", detail: "Terminal 2 - Mombasa Hub", time: "45 min ago", icon: AlertCircle, iconColor: "text-rose-500" },
-    { id: 4, type: "commission", title: "Commission Payout", detail: "Scheduled for 20 Businesses", time: "1 hour ago", icon: Activity, iconColor: "text-orange-500" },
-]
+function timeAgo(dateStr: string | null): string {
+    if (!dateStr) return "unknown";
+    const diff = Date.now() - new Date(dateStr).getTime();
+    const mins = Math.floor(diff / 60000);
+    if (mins < 1) return "just now";
+    if (mins < 60) return `${mins} min ago`;
+    const hrs = Math.floor(mins / 60);
+    if (hrs < 24) return `${hrs} hour${hrs > 1 ? "s" : ""} ago`;
+    return `${Math.floor(hrs / 24)} day${Math.floor(hrs / 24) > 1 ? "s" : ""} ago`;
+}
 
 const systemHealth = [
     { name: "RADIUS Server", status: "Operational", uptime: "99.99%", load: "12%", icon: Shield },
@@ -66,20 +77,37 @@ export default function AdminDashboard() {
     const [copied, setCopied] = useState(false)
     const [statsData, setStatsData] = useState<PlatformStats | null>(null)
     const [isLoadingStats, setIsLoadingStats] = useState(true)
+    const [activityEvents, setActivityEvents] = useState<ActivityEvent[]>([])
+    const [isLoadingActivity, setIsLoadingActivity] = useState(true)
 
     useEffect(() => {
         fetchStats()
+        fetchActivity()
     }, [])
 
     const fetchStats = async () => {
         try {
             const res = await fetch('/api/admin/stats')
+            if (!res.ok) throw new Error(`Stats API error: ${res.status}`)
             const data = await res.json()
             setStatsData(data)
         } catch (error) {
             console.error("Failed to fetch stats:", error)
         } finally {
             setIsLoadingStats(false)
+        }
+    }
+
+    const fetchActivity = async () => {
+        try {
+            const res = await fetch('/api/admin/activity')
+            if (!res.ok) throw new Error(`Activity API error: ${res.status}`)
+            const data = await res.json()
+            setActivityEvents(Array.isArray(data) ? data : [])
+        } catch (error) {
+            console.error("Failed to fetch activity:", error)
+        } finally {
+            setIsLoadingActivity(false)
         }
     }
 
@@ -96,15 +124,19 @@ export default function AdminDashboard() {
                 })
             })
 
-            if (!res.ok) throw new Error("Failed to create client")
+            if (!res.ok) {
+                const errData = await res.json().catch(() => ({}))
+                throw new Error(errData.detail || errData.error || "Failed to create client")
+            }
+            const data = await res.json()
 
-            // Simple logic for credential generation (mocked for now as we don't have a user table for clients yet)
-            const username = formData.name.toLowerCase().replace(/\s+/g, '_') + '_admin'
-            const password = Math.random().toString(36).slice(-8).toUpperCase()
-
-            setGeneratedCreds({ username, password })
+            setGeneratedCreds({
+                username: data.credentials.email,
+                password: data.credentials.password
+            })
             setStep('success')
-            fetchStats() // Refresh stats
+            fetchStats()
+            fetchActivity()
         } catch (error) {
             console.error("Error creating client:", error)
             alert("Failed to create client")
@@ -120,14 +152,13 @@ export default function AdminDashboard() {
     }
 
     const copyToClipboard = () => {
-        const text = `FastNet Admin Credentials\nBusiness: ${formData.name}\nUsername: ${generatedCreds.username}\nPassword: ${generatedCreds.password}`
+        const text = `FastNet Admin Credentials\nBusiness: ${formData.name}\nLogin Email: ${generatedCreds.username}\nPassword: ${generatedCreds.password}\nLogin URL: ${window.location.origin}/admin/login`
         navigator.clipboard.writeText(text)
         setCopied(true)
         setTimeout(() => setCopied(false), 2000)
     }
 
     return (
-        <AdminGuard>
         <DashboardLayout>
             <div className="flex flex-col gap-10">
                 <div className="flex items-center justify-between">
@@ -192,23 +223,31 @@ export default function AdminDashboard() {
                                 </div>
                             </div>
 
-                            <div className="h-48 flex items-end gap-2 px-2">
-                                {[30, 45, 38, 55, 62, 48, 75, 82, 95, 88, 105, 120].map((h, i) => (
-                                    <div key={i} className="flex-1 flex flex-col items-center gap-1 group/bar">
-                                        <div
-                                            className="w-full bg-blue-500/10 group-hover/bar:bg-blue-500 rounded-lg transition-all duration-300 relative"
-                                            style={{ height: `${(h / 120) * 100}%` }}
-                                        >
-                                            <div className="absolute -top-10 left-1/2 -translate-x-1/2 bg-gray-900 text-white text-[10px] font-black px-2 py-1 rounded-md opacity-0 group-hover/bar:opacity-100 transition-opacity whitespace-nowrap">
-                                                ${h}k
+                            {(!statsData?.monthlyRevenue || statsData.monthlyRevenue.length === 0) ? (
+                                <div className="h-48 flex items-center justify-center text-gray-300 text-sm font-bold">No revenue data yet</div>
+                            ) : (
+                                <div className="h-48 flex items-end gap-2 px-2">
+                                    {(() => {
+                                        const data = statsData.monthlyRevenue
+                                        const maxVal = Math.max(...data.map(d => d.revenue), 1)
+                                        return data.map((d, i) => (
+                                            <div key={i} className="flex-1 flex flex-col items-center gap-1 group/bar">
+                                                <div
+                                                    className="w-full bg-blue-500/10 group-hover/bar:bg-blue-500 rounded-lg transition-all duration-300 relative"
+                                                    style={{ height: `${Math.max((d.revenue / maxVal) * 100, 4)}%` }}
+                                                >
+                                                    <div className="absolute -top-10 left-1/2 -translate-x-1/2 bg-gray-900 text-white text-[10px] font-black px-2 py-1 rounded-md opacity-0 group-hover/bar:opacity-100 transition-opacity whitespace-nowrap">
+                                                        ${d.revenue.toLocaleString()}
+                                                    </div>
+                                                </div>
+                                                <span className="text-[8px] font-black uppercase text-gray-300 tracking-tighter sm:text-[10px]">
+                                                    {d.month}
+                                                </span>
                                             </div>
-                                        </div>
-                                        <span className="text-[8px] font-black uppercase text-gray-300 tracking-tighter sm:text-[10px]">
-                                            {["Jan", "Feb", "Mar", "Apr", "May", "Jun", "Jul", "Aug", "Sep", "Oct", "Nov", "Dec"][i]}
-                                        </span>
-                                    </div>
-                                ))}
-                            </div>
+                                        ))
+                                    })()}
+                                </div>
+                            )}
                         </div>
 
                         {/* Global Activity Feed */}
@@ -218,25 +257,35 @@ export default function AdminDashboard() {
                                 <button className="text-xs font-black uppercase tracking-widest text-blue-500 hover:text-blue-600">View All Logs</button>
                             </div>
                             <div className="divide-y divide-gray-50">
-                                {platformEvents.map((event) => (
-                                    <div key={event.id} className="p-6 flex items-center justify-between hover:bg-gray-50/50 transition-colors group">
-                                        <div className="flex items-center gap-5">
-                                            <div className={cn("w-12 h-12 rounded-2xl flex items-center justify-center bg-gray-50 group-hover:scale-110 transition-transform", event.iconColor)}>
-                                                <event.icon className="w-5 h-5" />
+                                {isLoadingActivity ? (
+                                    <div className="p-8 text-center text-gray-400 text-sm">Loading activity...</div>
+                                ) : activityEvents.length === 0 ? (
+                                    <div className="p-8 text-center text-gray-400 text-sm">No activity yet. Add a client or record a transaction.</div>
+                                ) : (
+                                    activityEvents.map((event) => {
+                                        const Icon = event.type === "signup" ? Building2 : DollarSign;
+                                        const iconColor = event.type === "signup" ? "text-blue-500" : "text-emerald-500";
+                                        return (
+                                            <div key={event.id} className="p-6 flex items-center justify-between hover:bg-gray-50/50 transition-colors group">
+                                                <div className="flex items-center gap-5">
+                                                    <div className={cn("w-12 h-12 rounded-2xl flex items-center justify-center bg-gray-50 group-hover:scale-110 transition-transform", iconColor)}>
+                                                        <Icon className="w-5 h-5" />
+                                                    </div>
+                                                    <div>
+                                                        <p className="font-bold text-gray-900 font-outfit">{event.title}</p>
+                                                        <p className="text-xs text-gray-500">{event.detail}</p>
+                                                    </div>
+                                                </div>
+                                                <div className="text-right">
+                                                    <div className="flex items-center gap-1.5 text-[10px] font-black text-gray-400 uppercase tracking-widest">
+                                                        <Clock className="w-3 h-3" />
+                                                        {timeAgo(event.time)}
+                                                    </div>
+                                                </div>
                                             </div>
-                                            <div>
-                                                <p className="font-bold text-gray-900 font-outfit">{event.title}</p>
-                                                <p className="text-xs text-gray-500">{event.detail}</p>
-                                            </div>
-                                        </div>
-                                        <div className="text-right">
-                                            <div className="flex items-center gap-1.5 text-[10px] font-black text-gray-400 uppercase tracking-widest">
-                                                <Clock className="w-3 h-3" />
-                                                {event.time}
-                                            </div>
-                                        </div>
-                                    </div>
-                                ))}
+                                        );
+                                    })
+                                )}
                             </div>
                         </div>
                     </div>
@@ -411,8 +460,8 @@ export default function AdminDashboard() {
                                     <div className="bg-emerald-50 border border-emerald-100 rounded-4xl p-8 space-y-4">
                                         <div className="flex items-center justify-between">
                                             <div className="space-y-1">
-                                                <p className="text-[10px] text-emerald-600 font-black uppercase tracking-widest">Login Username</p>
-                                                <p className="text-xl font-bold text-gray-900 font-outfit">{generatedCreds.username}</p>
+                                                <p className="text-[10px] text-emerald-600 font-black uppercase tracking-widest">Login Email</p>
+                                                <p className="text-lg font-bold text-gray-900 font-outfit break-all">{generatedCreds.username}</p>
                                             </div>
                                             <div className="space-y-1 text-right">
                                                 <p className="text-[10px] text-emerald-600 font-black uppercase tracking-widest">Temporary Password</p>
@@ -455,6 +504,5 @@ export default function AdminDashboard() {
                 </div>
             )}
         </DashboardLayout>
-        </AdminGuard>
     )
 }

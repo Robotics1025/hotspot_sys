@@ -134,7 +134,7 @@ export default function AdminTransactionsPage() {
     }
 
     const formatCurrency = (amount: string | number) => {
-        return `$${Number(amount).toFixed(2)}`
+        return `UGX ${Number(amount).toLocaleString()}`
     }
 
     const formatDate = (dateString: string) => {

@@ -2,12 +2,37 @@
 
 import Link from "next/link"
 import { useState, useRef, useEffect } from "react"
+import { useRouter, usePathname } from "next/navigation"
 import { Search, Bell, User, LogOut, Settings as SettingsIcon, UserCircle } from "lucide-react"
 import { cn } from "@/lib/utils"
 
 export function TopBar() {
+    const router = useRouter()
+    const pathname = usePathname()
+    const isAdmin = pathname.startsWith("/admin")
     const [isProfileOpen, setIsProfileOpen] = useState(false)
+    const [userName, setUserName] = useState("")
+    const [userEmail, setUserEmail] = useState("")
+    const [userRole, setUserRole] = useState("")
     const dropdownRef = useRef<HTMLDivElement>(null)
+
+    useEffect(() => {
+        fetch("/api/auth/me")
+            .then(r => r.ok ? r.json() : null)
+            .then(data => {
+                if (data?.user) {
+                    setUserName(data.user.name)
+                    setUserEmail(data.user.email)
+                    setUserRole(data.user.role === "super_admin" ? "Platform Owner" : "Client Admin")
+                }
+            })
+            .catch(() => {})
+    }, [])
+
+    async function handleLogout() {
+        await fetch("/api/auth/logout", { method: "POST" })
+        router.replace(isAdmin ? "/admin/login" : "/client/login")
+    }
 
     // Close dropdown when clicking outside
     useEffect(() => {
@@ -47,8 +72,8 @@ export function TopBar() {
                         className="flex items-center gap-3 pl-6 border-l border-gray-100 group hover:opacity-80 transition-opacity cursor-pointer focus:outline-none"
                     >
                         <div className="text-right hidden sm:block">
-                            <h4 className="text-sm font-bold text-gray-900 leading-none mb-1 group-hover:text-orange-600 transition-colors">Joel Admin</h4>
-                            <p className="text-[10px] text-gray-500 font-medium whitespace-nowrap">Platform Owner</p>
+                            <h4 className="text-sm font-bold text-gray-900 leading-none mb-1 group-hover:text-orange-600 transition-colors">{userName || "—"}</h4>
+                            <p className="text-[10px] text-gray-500 font-medium whitespace-nowrap">{userRole || "..."}</p>
                         </div>
                         <div className={cn(
                             "w-10 h-10 rounded-xl overflow-hidden border-2 shadow-sm transition-all",
@@ -63,7 +88,7 @@ export function TopBar() {
                         <div className="absolute right-0 mt-4 w-64 bg-white rounded-[24px] shadow-2xl shadow-black/10 border border-gray-50 py-3 animate-in fade-in slide-in-from-top-2 duration-200">
                             <div className="px-5 py-3 border-b border-gray-50 mb-2">
                                 <p className="text-[10px] font-black uppercase tracking-widest text-gray-400 mb-1">Signed in as</p>
-                                <p className="text-sm font-bold text-gray-900">admin@fastnet.io</p>
+                                <p className="text-sm font-bold text-gray-900">{userEmail || "..."}</p>
                             </div>
 
                             <div className="px-2 space-y-1">
@@ -87,6 +112,7 @@ export function TopBar() {
 
                             <div className="mt-2 pt-2 border-t border-gray-50 px-2">
                                 <button
+                                    onClick={handleLogout}
                                     className="w-full flex items-center gap-3 px-4 py-3 text-sm font-bold text-rose-500 hover:bg-rose-50 rounded-2xl transition-all group"
                                 >
                                     <LogOut className="w-5 h-5 text-rose-400 group-hover:text-rose-500" />

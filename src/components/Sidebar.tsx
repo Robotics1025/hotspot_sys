@@ -1,7 +1,7 @@
 "use client"
 
 import Link from "next/link"
-import { usePathname } from "next/navigation"
+import { usePathname, useRouter } from "next/navigation"
 import {
     Home,
     Ticket,
@@ -37,9 +37,14 @@ const adminNavItems = [
 
 export function Sidebar() {
     const pathname = usePathname()
+    const router = useRouter()
     const isAdmin = pathname.startsWith("/admin")
     const navItems = isAdmin ? adminNavItems : clientNavItems
 
+    async function handleLogout() {
+        await fetch("/api/auth/logout", { method: "POST" })
+        router.replace(isAdmin ? "/admin/login" : "/client/login")
+    }
 
     return (
         <div className="flex flex-col h-screen w-64 bg-[#111111] text-white border-r border-[#222222]">
@@ -76,7 +81,15 @@ export function Sidebar() {
                 })}
             </nav>
 
-
+            <div className="p-4 border-t border-[#222222]">
+                <button
+                    onClick={handleLogout}
+                    className="w-full flex items-center gap-3 px-4 py-3 rounded-xl text-gray-400 hover:bg-rose-500/10 hover:text-rose-400 transition-all group"
+                >
+                    <LogOut className="w-5 h-5 group-hover:text-rose-400" />
+                    <span className="font-medium text-sm">Log Out</span>
+                </button>
+            </div>
         </div>
     )
 }

@@ -21,80 +21,54 @@ import {
     SearchCheck
 } from "lucide-react"
 import { cn } from "@/lib/utils"
-import { useState } from "react"
+import { useState, useEffect } from "react"
 
-const systemMetrics = [
-    { name: "Active Alerts", value: "2", status: "Critical", icon: AlertCircle, color: "text-rose-500", bg: "bg-rose-50" },
-    { name: "Nodes Online", value: "98%", status: "Stable", icon: Server, color: "text-emerald-500", bg: "bg-emerald-50" },
-    { name: "System Load", value: "14%", status: "Optimal", icon: Activity, color: "text-blue-500", bg: "bg-blue-50" },
-    { name: "Payout Queue", value: "12", status: "Pending", icon: Zap, color: "text-amber-500", bg: "bg-amber-50" },
-]
+interface Notification {
+    id: string
+    title: string
+    description: string
+    time: string
+    type: "user" | "payment" | "system"
+    priority: "high" | "medium" | "low" | "critical"
+    unread: boolean
+}
 
-const notifications = [
-    {
-        id: 1,
-        title: "New Vendor Registration",
-        description: "A new business 'Skyline Internet' has registered and is awaiting verification.",
-        time: "5 minutes ago",
-        type: "user",
-        priority: "high",
-        unread: true,
-        icon: User,
-        color: "text-blue-500",
-        bg: "bg-blue-50/50"
-    },
-    {
-        id: 2,
-        title: "Critical System Update",
-        description: "The RADIUS server will undergo maintenance tonight at 02:00 AM.",
-        time: "2 hours ago",
-        type: "system",
-        priority: "critical",
-        unread: true,
-        icon: Shield,
-        color: "text-rose-500",
-        bg: "bg-rose-50/50"
-    },
-    {
-        id: 3,
-        title: "Payment Gateway Success",
-        description: "M-Pesa integration has successfully processed 45 transactions today.",
-        time: "4 hours ago",
-        type: "payment",
-        priority: "medium",
-        unread: false,
-        icon: Zap,
-        color: "text-amber-500",
-        bg: "bg-amber-50/50"
-    },
-    {
-        id: 4,
-        title: "Health Check Passed",
-        description: "Global node infrastructure is 100% operational with low latency.",
-        time: "Yesterday, 10:00 PM",
-        type: "health",
-        priority: "low",
-        unread: false,
-        icon: CheckCircle2,
-        color: "text-emerald-500",
-        bg: "bg-emerald-50/50"
-    },
-    {
-        id: 5,
-        title: "New Support Ticket",
-        description: "User #4902 reported connectivity issues in Westlands area.",
-        time: "Yesterday, 04:30 PM",
-        type: "user",
-        priority: "high",
-        unread: false,
-        icon: Info,
-        color: "text-indigo-500",
-        bg: "bg-indigo-50/50"
-    }
-]
+function getNotifStyle(type: Notification["type"]) {
+    if (type === "user") return { icon: User, color: "text-blue-500", bg: "bg-blue-50/50" }
+    if (type === "payment") return { icon: Zap, color: "text-amber-500", bg: "bg-amber-50/50" }
+    return { icon: AlertCircle, color: "text-rose-500", bg: "bg-rose-50/50" }
+}
 
 export default function NotificationsPage() {
     const [filter, setFilter] = useState("all")
+    const [notifications, setNotifications] = useState<Notification[]>([])
+    const [isLoading, setIsLoading] = useState(true)
+
+    useEffect(() => {
+        fetch('/api/admin/notifications')
+            .then(r => r.json())
+            .then(data => setNotifications(Array.isArray(data) ? data : []))
+            .catch(console.error)
+            .finally(() => setIsLoading(false))
+    }, [])
+
+    const filtered = notifications.filter(n => {
+        if (filter === "all") return true
+        if (filter === "unread") return n.unread
+        if (filter === "important") return n.priority === "high" || n.priority === "critical"
+        return n.type === filter
+    })
+
+    const alertCount = notifications.filter(n => n.priority === "critical" || n.priority === "high").length
+    const pendingCount = notifications.filter(n => n.type === "payment").length
+    const userCount = notifications.filter(n => n.type === "user").length
+
+    const systemMetrics = [
+        { name: "Active Alerts", value: String(alertCount), status: alertCount > 0 ? "Action Needed" : "Clear", icon: AlertCircle, color: alertCount > 0 ? "text-rose-500" : "text-emerald-500", bg: alertCount > 0 ? "bg-rose-50" : "bg-emerald-50" },
+        { name: "New Clients", value: String(userCount), status: "Registered", icon: User, color: "text-blue-500", bg: "bg-blue-50" },
+        { name: "Total Events", value: String(notifications.length), status: "Tracked", icon: Activity, color: "text-indigo-500", bg: "bg-indigo-50" },
+        { name: "Payout Queue", value: String(pendingCount), status: "Pending", icon: Zap, color: "text-amber-500", bg: "bg-amber-50" },
+    ]
 
     return (
         <AdminGuard>
@@ -179,7 +153,20 @@ export default function NotificationsPage() {
 
                     {/* Notification Stream */}
                     <div className="space-y-4">
-                        {notifications.map((notif) => (
+                        {isLoading ? (
+                            <div className="py-16 text-center text-gray-400 text-sm">Loading notifications...</div>
+                        ) : filtered.length === 0 ? (
+                            <div className="py-20 text-center bg-gray-50/50 rounded-[40px] border-2 border-dashed border-gray-100">
+                                <div className="w-20 h-20 bg-white rounded-3xl shadow-sm flex items-center justify-center mx-auto mb-6 text-gray-200">
+                                    <SearchCheck className="w-10 h-10" />
+                                </div>
+                                <h3 className="text-xl font-bold font-outfit text-gray-900 mb-2">No events</h3>
+                                <p className="text-gray-500 font-medium text-sm max-w-xs mx-auto">No notifications match this filter right now.</p>
+                            </div>
+                        ) : filtered.map((notif) => {
+                            const style = getNotifStyle(notif.type)
+                            const IconComponent = style.icon
+                            return (
                             <div
                                 key={notif.id}
                                 className={cn(
@@ -189,9 +176,9 @@ export default function NotificationsPage() {
                             >
                                 <div className={cn(
                                     "w-14 h-14 rounded-2xl flex items-center justify-center shrink-0 shadow-inner",
-                                    notif.bg, notif.color
+                                    style.bg, style.color
                                 )}>
-                                    <notif.icon className="w-6 h-6 group-hover:scale-110 transition-transform" />
+                                    <IconComponent className="w-6 h-6 group-hover:scale-110 transition-transform" />
                                 </div>
 
                                 <div className="flex-1 min-w-0">
@@ -231,18 +218,7 @@ export default function NotificationsPage() {
                         ))}
                     </div>
 
-                    {/* Empty State */}
-                    {notifications.length === 0 && (
-                        <div className="py-20 text-center bg-gray-50/50 rounded-[40px] border-2 border-dashed border-gray-100">
-                            <div className="w-20 h-20 bg-white rounded-3xl shadow-sm flex items-center justify-center mx-auto mb-6 text-gray-200">
-                                <SearchCheck className="w-10 h-10" />
-                            </div>
-                            <h3 className="text-xl font-bold font-outfit text-gray-900 mb-2">No new events</h3>
-                            <p className="text-gray-500 font-medium text-sm max-w-xs mx-auto">
-                                Everything looks good! No system alerts or registrations requiring your attention right now.
-                            </p>
-                        </div>
-                    )}
+
                 </div>
             </div>
         </DashboardLayout>

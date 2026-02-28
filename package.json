@@ -3,14 +3,16 @@
   "version": "0.1.0",
   "private": true,
   "scripts": {
-    "dev": "next dev",
+    "dev": "node -e \"try{require('fs').rmSync('.next/dev/lock')}catch(e){}\" && cross-env NODE_TLS_REJECT_UNAUTHORIZED=0 next dev -p 3000",
     "build": "next build",
     "start": "next start",
     "lint": "eslint",
-    "db:push": "drizzle-kit push:pg",
-    "db:generate": "drizzle-kit generate:pg",
-    "db:studio": "drizzle-kit studio",
+    "db:push": "cross-env NODE_TLS_REJECT_UNAUTHORIZED=0 drizzle-kit push",
+    "db:generate": "drizzle-kit generate",
+    "db:studio": "cross-env NODE_TLS_REJECT_UNAUTHORIZED=0 drizzle-kit studio",
     "db:migrate": "drizzle-kit migrate",
+    "db:seed": "cross-env NODE_TLS_REJECT_UNAUTHORIZED=0 npx tsx scripts/seed-admin.ts",
+    "db:seed:demo": "cross-env NODE_TLS_REJECT_UNAUTHORIZED=0 npx tsx scripts/seed-demo.ts",
     "postinstall": "npm run db:generate"
   },
   "dependencies": {
@@ -21,6 +23,7 @@
     "dompurify": "^3.3.1",
     "drizzle-orm": "^0.45.1",
     "framer-motion": "^12.34.3",
+    "jose": "^6.1.3",
     "lucide-react": "^0.575.0",
     "nanoid": "^5.1.6",
     "next": "16.1.6",
@@ -39,10 +42,13 @@
     "@types/pg": "^8.16.0",
     "@types/react": "^19.2.14",
     "@types/react-dom": "^19.2.3",
+    "cross-env": "^10.1.0",
+    "dotenv": "^17.3.1",
     "drizzle-kit": "^0.31.9",
     "eslint": "^9",
     "eslint-config-next": "16.1.6",
     "tailwindcss": "^4",
+    "tsx": "^4.21.0",
     "typescript": "^5"
   }
 }

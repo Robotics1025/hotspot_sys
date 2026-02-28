@@ -1,3 +1,5 @@
+"use client"
+
 import { AlertTriangle, RefreshCw, XCircle, AlertCircle, Info } from "lucide-react"
 import { cn } from "@/lib/utils"
 

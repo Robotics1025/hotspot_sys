@@ -26,10 +26,12 @@ export default function AdminRoutersPage() {
     const fetchRouters = async () => {
         try {
             const res = await fetch('/api/admin/routers')
+            if (!res.ok) throw new Error(`Routers API error: ${res.status}`)
             const data = await res.json()
-            setRouters(data)
+            setRouters(Array.isArray(data) ? data : [])
         } catch (error) {
             console.error("Failed to fetch routers:", error)
+            setRouters([])
         } finally {
             setIsLoading(false)
         }

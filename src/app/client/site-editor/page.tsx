@@ -1,6 +1,7 @@
 "use client"
 
 import DashboardLayout from "@/components/DashboardLayout"
+import { ClientGuard } from "@/components/ClientGuard"
 import {
     Bold, Italic, Underline, AlignLeft, AlignCenter, AlignRight,
     Type, Image as ImageIcon, Palette, Save, ChevronDown,
@@ -9,7 +10,7 @@ import {
 import { useState } from "react"
 import { cn } from "@/lib/utils"
 
-export default function SiteEditor() {
+function SiteEditorContent() {
     const [activeTab, setActiveTab] = useState("home")
 
     return (
@@ -199,5 +200,13 @@ export default function SiteEditor() {
                 </div>
             </div>
         </DashboardLayout>
+    )
+}
+
+export default function SiteEditor() {
+    return (
+        <ClientGuard>
+            <SiteEditorContent />
+        </ClientGuard>
     )
 }

@@ -1,166 +1,271 @@
+﻿"use client"
+
 import DashboardLayout from "@/components/DashboardLayout"
-import { Users, User, Ticket, AlertCircle, Play, MoreHorizontal, ArrowUpRight } from "lucide-react"
+import { ClientGuard } from "@/components/ClientGuard"
+import {
+    Ticket,
+    DollarSign,
+    Router,
+    LayoutGrid,
+    TrendingUp,
+    CheckCircle2,
+    Clock,
+    Ban,
+    ArrowUpRight,
+    RefreshCw,
+    Wifi
+} from "lucide-react"
+import { useState, useEffect } from "react"
+import Link from "next/link"
 import { cn } from "@/lib/utils"
 
-const stats = [
-    { name: "Active Users", value: "156", change: "+15.6%", icon: Users, color: "bg-blue-500" },
-    { name: "Vouchers Sold", value: "97", change: "+5.6%", icon: Ticket, color: "bg-emerald-500" },
-    { name: "Network Alerts", value: "07", change: "-1.1%", icon: AlertCircle, color: "bg-rose-500" },
-]
+interface ClientStats {
+    vouchers: {
+        total: number
+        active: number
+        unused: number
+        expired: number
+    }
+    financial: {
+        totalRevenue: number
+        totalPayout: number
+        transactionCount: number
+    }
+    resources: {
+        planCount: number
+        routerCount: number
+    }
+    recentTransactions: {
+        id: number
+        amount: string
+        status: string
+        createdAt: string
+    }[]
+}
 
-const recentActivity = [
-    { id: 1, user: "Nasi Goreng", plan: "1 Hour Plan", price: "$51", status: "Active" },
-    { id: 2, user: "Udang Semur", plan: "3 Hour Plan", price: "$56", status: "Active" },
-    { id: 3, user: "Meat Ball May", plan: "1 Day Plan", price: "$66", status: "Active" },
-]
+function fmtUGX(val: number) {
+    return `UGX ${val.toLocaleString()}`
+}
 
-const popularPlans = [
-    { name: "Fast Browse", speed: "2M/2M", price: "$66", duration: "1 Hour", color: "bg-orange-100" },
-    { name: "Heavy Stream", speed: "5M/5M", price: "$56", duration: "3 Hour", color: "bg-indigo-100" },
-    { name: "Daily Pass", speed: "10M/10M", price: "$51", duration: "1 Day", color: "bg-emerald-100" },
-]
+function timeAgo(dateStr: string) {
+    const diff = Date.now() - new Date(dateStr).getTime()
+    const mins = Math.floor(diff / 60000)
+    if (mins < 1) return "just now"
+    if (mins < 60) return `${mins}m ago`
+    const hrs = Math.floor(mins / 60)
+    if (hrs < 24) return `${hrs}h ago`
+    return `${Math.floor(hrs / 24)}d ago`
+}
+
+function ClientDashboardContent() {
+    const [stats, setStats] = useState<ClientStats | null>(null)
+    const [isLoading, setIsLoading] = useState(true)
+
+    useEffect(() => { fetchStats() }, [])
+
+    const fetchStats = async () => {
+        setIsLoading(true)
+        try {
+            const res  = await fetch("/api/client/stats")
+            const data = await res.json()
+            if (res.ok) setStats(data)
+        } catch (e) { console.error(e) }
+        finally { setIsLoading(false) }
+    }
+
+    if (isLoading) {
+        return (
+            <DashboardLayout>
+                <div className="flex items-center justify-center h-[60vh]">
+                    <RefreshCw className="w-8 h-8 text-gray-400 animate-spin" />
+                </div>
+            </DashboardLayout>
+        )
+    }
+
+    const v = stats?.vouchers
+    const f = stats?.financial
+    const r = stats?.resources
+
+    return (
+        <DashboardLayout>
+        <div className="flex flex-col gap-8">
+
+            {/* Header */}
+            <div className="flex items-center justify-between">
+                <div>
+                    <h1 className="text-3xl font-bold font-outfit text-gray-900">Dashboard</h1>
+                    <p className="text-gray-500 text-sm mt-1">Your hotspot network at a glance.</p>
+                </div>
+                <button onClick={fetchStats} className="flex items-center gap-2 px-4 py-2 bg-gray-100 text-gray-700 rounded-xl hover:bg-gray-200 transition-all text-sm font-medium">
+                    <RefreshCw className="w-4 h-4" /> Refresh
+                </button>
+            </div>
+
+            {/* Top stats */}
+            <div className="grid grid-cols-2 lg:grid-cols-4 gap-6">
+                {[
+                    {
+                        label: "Total Vouchers",
+                        value: v?.total.toLocaleString() ?? "0",
+                        sub: `${v?.unused ?? 0} unused`,
+                        icon: Ticket,
+                        color: "bg-orange-100 text-orange-600",
+                        href: "/client/vouchers",
+                    },
+                    {
+                        label: "Total Revenue",
+                        value: fmtUGX(f?.totalRevenue ?? 0),
+                        sub: `${f?.transactionCount ?? 0} transactions`,
+                        icon: TrendingUp,
+                        color: "bg-emerald-100 text-emerald-600",
+                        href: "/client/transactions",
+                    },
+                    {
+                        label: "Your Earnings",
+                        value: fmtUGX(f?.totalPayout ?? 0),
+                        sub: "After platform fee",
+                        icon: DollarSign,
+                        color: "bg-blue-100 text-blue-600",
+                        href: "/client/transactions",
+                    },
+                    {
+                        label: "Routers",
+                        value: r?.routerCount.toString() ?? "0",
+                        sub: `${r?.planCount ?? 0} plans`,
+                        icon: Router,
+                        color: "bg-indigo-100 text-indigo-600",
+                        href: "/client/routers",
+                    },
+                ].map((stat) => (
+                    <Link key={stat.label} href={stat.href} className="bg-white p-6 rounded-4xl border border-gray-100 shadow-sm hover:shadow-md transition-all group">
+                        <div className="flex justify-between items-start mb-4">
+                            <div className={cn("p-3 rounded-2xl", stat.color)}>
+                                <stat.icon className="w-5 h-5" />
+                            </div>
+                            <ArrowUpRight className="w-4 h-4 text-gray-300 group-hover:text-orange-500 transition-colors" />
+                        </div>
+                        <p className="text-xs font-semibold text-gray-400 mb-1">{stat.label}</p>
+                        <p className="text-xl font-bold text-gray-900 font-outfit leading-tight">{stat.value}</p>
+                        <p className="text-xs text-gray-400 mt-1">{stat.sub}</p>
+                    </Link>
+                ))}
+            </div>
+
+            <div className="grid grid-cols-1 lg:grid-cols-3 gap-8">
+
+                {/* Voucher breakdown */}
+                <div className="bg-white rounded-4xl border border-gray-100 shadow-sm p-8">
+                    <div className="flex items-center justify-between mb-6">
+                        <div>
+                            <h2 className="text-lg font-bold font-outfit text-gray-900">Voucher Status</h2>
+                            <p className="text-xs text-gray-400 mt-0.5">{v?.total ?? 0} total issued</p>
+                        </div>
+                        <Link href="/client/vouchers" className="text-xs font-bold text-orange-500 hover:underline">View all</Link>
+                    </div>
+                    <div className="flex flex-col gap-4">
+                        {[
+                            { label: "Unused",  value: v?.unused  ?? 0, color: "bg-blue-500",    text: "text-blue-700",    sub: "bg-blue-50",   icon: Clock },
+                            { label: "Active",  value: v?.active  ?? 0, color: "bg-emerald-500", text: "text-emerald-700", sub: "bg-emerald-50", icon: CheckCircle2 },
+                            { label: "Expired", value: v?.expired ?? 0, color: "bg-red-400",     text: "text-red-700",    sub: "bg-red-50",    icon: Ban },
+                        ].map(item => {
+                            const pct = v?.total ? Math.round((item.value / v.total) * 100) : 0
+                            const Icon = item.icon
+                            return (
+                                <div key={item.label} className={cn("flex items-center gap-4 p-4 rounded-2xl", item.sub)}>
+                                    <div className={cn("w-9 h-9 rounded-xl flex items-center justify-center text-white shrink-0", item.color)}>
+                                        <Icon className="w-4 h-4" />
+                                    </div>
+                                    <div className="flex-1 min-w-0">
+                                        <div className="flex items-center justify-between mb-1">
+                                            <span className={cn("text-sm font-bold", item.text)}>{item.label}</span>
+                                            <span className={cn("text-sm font-bold", item.text)}>{item.value.toLocaleString()}</span>
+                                        </div>
+                                        <div className="w-full bg-white/60 rounded-full h-1.5">
+                                            <div className={cn("h-1.5 rounded-full", item.color)} style={{ width: `${pct}%` }} />
+                                        </div>
+                                    </div>
+                                </div>
+                            )
+                        })}
+                    </div>
+                </div>
+
+                {/* Recent transactions */}
+                <div className="lg:col-span-2 bg-white rounded-4xl border border-gray-100 shadow-sm p-8">
+                    <div className="flex items-center justify-between mb-6">
+                        <div>
+                            <h2 className="text-lg font-bold font-outfit text-gray-900">Recent Transactions</h2>
+                            <p className="text-xs text-gray-400 mt-0.5">Last 10 payments</p>
+                        </div>
+                        <Link href="/client/transactions" className="text-xs font-bold text-orange-500 hover:underline">View all</Link>
+                    </div>
+
+                    {!stats?.recentTransactions?.length ? (
+                        <div className="flex flex-col items-center justify-center h-48 gap-3 text-gray-400">
+                            <DollarSign className="w-10 h-10" />
+                            <p className="text-sm font-medium">No transactions yet</p>
+                            <p className="text-xs text-center">Transactions appear here when customers use vouchers.</p>
+                        </div>
+                    ) : (
+                        <div className="flex flex-col divide-y divide-gray-50">
+                            {stats.recentTransactions.map((tx) => (
+                                <div key={tx.id} className="flex items-center gap-4 py-4">
+                                    <div className={cn(
+                                        "w-9 h-9 rounded-xl flex items-center justify-center shrink-0",
+                                        tx.status === "completed" ? "bg-emerald-100 text-emerald-600" :
+                                        tx.status === "pending"   ? "bg-yellow-100 text-yellow-600" :
+                                                                    "bg-red-100 text-red-600"
+                                    )}>
+                                        <DollarSign className="w-4 h-4" />
+                                    </div>
+                                    <div className="flex-1 min-w-0">
+                                        <p className="font-semibold text-gray-900 text-sm">Transaction #{tx.id}</p>
+                                        <p className="text-xs text-gray-400">{timeAgo(tx.createdAt)}</p>
+                                    </div>
+                                    <div className="text-right">
+                                        <p className="font-bold text-gray-900 text-sm">{fmtUGX(Number(tx.amount))}</p>
+                                        <span className={cn(
+                                            "text-xs font-bold px-2 py-0.5 rounded-full",
+                                            tx.status === "completed" ? "bg-emerald-100 text-emerald-700" :
+                                            tx.status === "pending"   ? "bg-yellow-100 text-yellow-700" :
+                                                                        "bg-red-100 text-red-700"
+                                        )}>{tx.status}</span>
+                                    </div>
+                                </div>
+                            ))}
+                        </div>
+                    )}
+                </div>
+            </div>
+
+            {/* Quick links */}
+            <div className="grid grid-cols-2 lg:grid-cols-4 gap-4">
+                {[
+                    { label: "Manage Plans",   icon: LayoutGrid, href: "/client/plans",        color: "text-orange-500" },
+                    { label: "View Vouchers",  icon: Ticket,     href: "/client/vouchers",     color: "text-blue-500" },
+                    { label: "Routers & NAS",  icon: Wifi,       href: "/client/routers",      color: "text-indigo-500" },
+                    { label: "Transactions",   icon: DollarSign, href: "/client/transactions", color: "text-emerald-500" },
+                ].map(item => (
+                    <Link key={item.label} href={item.href} className="bg-white border border-gray-100 rounded-3xl p-6 flex items-center gap-4 hover:shadow-md transition-all group">
+                        <div className={cn("p-3 rounded-2xl bg-gray-50 group-hover:bg-orange-50 transition-colors", item.color)}>
+                            <item.icon className="w-5 h-5" />
+                        </div>
+                        <span className="font-semibold text-gray-700 text-sm group-hover:text-gray-900 transition-colors">{item.label}</span>
+                        <ArrowUpRight className="w-4 h-4 text-gray-300 group-hover:text-orange-500 ml-auto transition-colors" />
+                    </Link>
+                ))}
+            </div>
+
+        </div>
+        </DashboardLayout>
+    )
+}
 
 export default function ClientDashboard() {
     return (
-        <DashboardLayout>
-            <div className="flex flex-col gap-10">
-                {/* Welcome Header */}
-                <div className="relative h-64 bg-[#111111] rounded-4xl overflow-hidden group">
-                    <div className="absolute inset-0 bg-gradient-to-r from-black/80 to-transparent z-10" />
-                    <div className="absolute top-0 right-0 w-1/2 h-full bg-[url('https://images.unsplash.com/photo-1544197150-b99a580bb7a8?q=80&w=2070&auto=format&fit=crop')] bg-cover bg-center opacity-40 group-hover:scale-105 transition-transform duration-700" />
-
-                    <div className="relative z-20 h-full flex flex-col justify-center px-12">
-                        <h1 className="text-4xl font-bold text-white mb-4 font-outfit">Welcome back, Joel!</h1>
-                        <p className="text-gray-400 max-w-md mb-8 leading-relaxed">
-                            Manage your hotspot network and track your business performance in real-time.
-                        </p>
-                        <button className="flex items-center gap-2 px-6 py-3 bg-white text-black font-bold rounded-2xl hover:bg-orange-500 hover:text-white transition-all w-fit">
-                            <Play className="w-4 h-4 fill-current" />
-                            <span>Learn more</span>
-                        </button>
-                    </div>
-                </div>
-
-                <div className="grid grid-cols-12 gap-8">
-                    {/* Main Content Area */}
-                    <div className="col-span-8 flex flex-col gap-10">
-                        {/* Analytics Section */}
-                        <div>
-                            <div className="flex items-end justify-between mb-6">
-                                <h2 className="text-xl font-bold font-outfit">Analytic</h2>
-                                <button className="text-sm font-semibold text-gray-500 hover:text-orange-500">See more</button>
-                            </div>
-                            <div className="grid grid-cols-3 gap-6">
-                                {stats.map((stat) => (
-                                    <div key={stat.name} className="bg-white p-6 rounded-3xl border border-gray-100 hover:border-orange-200 transition-all hover:shadow-lg hover:shadow-orange-500/5 group">
-                                        <div className="flex justify-between items-start mb-4">
-                                            <div className={cn("p-3 rounded-2xl text-white", stat.color)}>
-                                                <stat.icon className="w-6 h-6" />
-                                            </div>
-                                            <div className="flex items-center gap-1 text-[10px] font-bold text-emerald-500 bg-emerald-50 px-2 py-1 rounded-full">
-                                                <ArrowUpRight className="w-3 h-3" />
-                                                {stat.change}
-                                            </div>
-                                        </div>
-                                        <p className="text-xs font-semibold text-gray-400 mb-1">{stat.name}</p>
-                                        <h3 className="text-2xl font-bold text-gray-900 font-outfit">{stat.value}</h3>
-                                    </div>
-                                ))}
-                            </div>
-                        </div>
-
-                        {/* Popular Plans Section */}
-                        <div>
-                            <div className="flex items-end justify-between mb-6">
-                                <h2 className="text-xl font-bold font-outfit">Active Plans</h2>
-                                <button className="text-sm font-semibold text-gray-500 hover:text-orange-500">See more</button>
-                            </div>
-                            <div className="grid grid-cols-3 gap-6">
-                                {popularPlans.map((plan) => (
-                                    <div key={plan.name} className="bg-white p-4 rounded-4xl border border-gray-100 hover:border-orange-200 transition-all group overflow-hidden">
-                                        <div className={cn("relative h-48 rounded-3xl mb-4 overflow-hidden", plan.color)}>
-                                            <div className="absolute inset-0 flex items-center justify-center opacity-20 transform -rotate-12">
-                                                <Ticket className="w-32 h-32" />
-                                            </div>
-                                            <div className="absolute top-4 right-4 p-2 bg-white/50 backdrop-blur rounded-xl">
-                                                <Ticket className="w-4 h-4 text-gray-900" />
-                                            </div>
-                                        </div>
-                                        <div className="px-2">
-                                            <div className="flex justify-between items-start mb-2">
-                                                <h3 className="font-bold text-gray-900">{plan.name}</h3>
-                                                <span className="text-lg font-bold text-orange-500">{plan.price}</span>
-                                            </div>
-                                            <div className="flex items-center justify-between text-[10px] font-bold text-gray-400">
-                                                <span>{plan.duration}</span>
-                                                <span className="px-2 py-1 bg-gray-50 rounded-md border border-gray-100">{plan.speed}</span>
-                                            </div>
-                                        </div>
-                                    </div>
-                                ))}
-                            </div>
-                        </div>
-                    </div>
-
-                    {/* Sidebar / Recent Activity */}
-                    <div className="col-span-4 flex flex-col gap-10">
-                        <div className="bg-white p-8 rounded-4xl border border-gray-100">
-                            <div className="flex items-center justify-between mb-6">
-                                <h2 className="text-lg font-bold font-outfit">Recent Sales</h2>
-                                <MoreHorizontal className="w-5 h-5 text-gray-400" />
-                            </div>
-
-                            <div className="space-y-6">
-                                {recentActivity.map((activity) => (
-                                    <div key={activity.id} className="flex items-center gap-4">
-                                        <div className="w-12 h-12 bg-gray-100 rounded-2xl flex items-center justify-center">
-                                            <User className="w-6 h-6 text-gray-400" />
-                                        </div>
-                                        <div className="flex-1">
-                                            <h4 className="text-sm font-bold text-gray-900">{activity.user}</h4>
-                                            <p className="text-[10px] text-gray-500 font-medium">{activity.plan}</p>
-                                        </div>
-                                        <div className="text-right">
-                                            <div className="text-sm font-bold text-gray-900">{activity.price}</div>
-                                        </div>
-                                    </div>
-                                ))}
-                            </div>
-
-                            <div className="mt-8 pt-6 border-t border-gray-50 space-y-4">
-                                <div className="flex justify-between items-center text-sm">
-                                    <span className="text-gray-500 font-medium">Service Fee (15%)</span>
-                                    <span className="text-gray-900 font-bold">$1.00</span>
-                                </div>
-                                <div className="flex justify-between items-center text-lg font-bold">
-                                    <span className="text-gray-900">Total Payout</span>
-                                    <span className="text-orange-500">$1231.00</span>
-                                </div>
-                                <button className="w-full py-4 bg-orange-400 text-white font-bold rounded-2xl hover:bg-orange-500 transition-all flex items-center justify-center gap-2">
-                                    <Ticket className="w-5 h-5" />
-                                    Generate Report
-                                </button>
-                            </div>
-                        </div>
-
-                        {/* Address / Router Card */}
-                        <div className="bg-white p-8 rounded-4xl border border-gray-100">
-                            <h2 className="text-lg font-bold font-outfit mb-4">Site Location</h2>
-                            <div className="flex items-start gap-3 mb-4">
-                                <div className="w-5 h-5 mt-1 text-orange-500">
-                                    <AlertCircle className="w-full h-full" />
-                                </div>
-                                <p className="text-xs text-gray-600 leading-relaxed font-medium">
-                                    Main Cafe, Plot 42, St. Sraties, Entebbe.
-                                </p>
-                            </div>
-                            <div className="h-40 bg-gray-100 rounded-3xl overflow-hidden bg-[url('https://images.unsplash.com/photo-1524661135-423995f22d0b?q=80&w=2074&auto=format&fit=crop')] bg-cover bg-center">
-                                <div className="w-full h-full bg-black/20 hover:bg-black/0 transition-all cursor-pointer" />
-                            </div>
-                        </div>
-                    </div>
-                </div>
-            </div>
-        </DashboardLayout>
+        <ClientGuard>
+            <ClientDashboardContent />
+        </ClientGuard>
     )
 }

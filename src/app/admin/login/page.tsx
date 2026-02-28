@@ -3,24 +3,42 @@
 import Link from "next/link"
 import { useState } from "react"
 import { useRouter } from "next/navigation"
-import { Zap, Mail, Lock, Eye, EyeOff, ArrowRight, Loader2 } from "lucide-react"
+import { Zap, Mail, Lock, Eye, EyeOff, ArrowRight, Loader2, AlertCircle } from "lucide-react"
 
 
 export default function AdminLogin() {
     const [showPassword, setShowPassword] = useState(false)
     const [isLoading, setIsLoading] = useState(false)
+    const [error, setError] = useState<string | null>(null)
+    const [email, setEmail] = useState("")
+    const [password, setPassword] = useState("")
     const router = useRouter()
 
-    const handleLogin = (e: React.FormEvent) => {
+    const handleLogin = async (e: React.FormEvent) => {
         e.preventDefault()
         setIsLoading(true)
+        setError(null)
 
-        // Simulate login and session storage
-        setTimeout(() => {
-            setIsLoading(false)
-            localStorage.setItem("fastnet_session", "admin_active")
+        try {
+            const res = await fetch("/api/auth/login", {
+                method: "POST",
+                headers: { "Content-Type": "application/json" },
+                body: JSON.stringify({ email, password }),
+            })
+
+            const data = await res.json()
+
+            if (!res.ok) {
+                setError(data.error ?? "Login failed. Please try again.")
+                return
+            }
+
             router.push("/admin")
-        }, 1500)
+        } catch {
+            setError("Network error. Please check your connection.")
+        } finally {
+            setIsLoading(false)
+        }
     }
 
 
@@ -56,6 +74,8 @@ export default function AdminLogin() {
                                 <input
                                     type="email"
                                     placeholder="admin@fastnet.systems"
+                                    value={email}
+                                    onChange={(e) => setEmail(e.target.value)}
                                     className="w-full bg-white/5 border border-white/5 rounded-2xl py-4 pl-12 pr-4 text-white text-sm outline-none focus:border-purple-500/50 focus:bg-white/10 transition-all"
                                     required
                                 />
@@ -73,6 +93,8 @@ export default function AdminLogin() {
                                 <input
                                     type={showPassword ? "text" : "password"}
                                     placeholder="••••••••"
+                                    value={password}
+                                    onChange={(e) => setPassword(e.target.value)}
                                     className="w-full bg-white/5 border border-white/5 rounded-2xl py-4 pl-12 pr-12 text-white text-sm outline-none focus:border-purple-500/50 focus:bg-white/10 transition-all font-mono"
                                     required
                                 />
@@ -85,6 +107,14 @@ export default function AdminLogin() {
                                 </button>
                             </div>
                         </div>
+
+                        {/* Error Message */}
+                        {error && (
+                            <div className="flex items-center gap-3 p-4 bg-red-500/10 border border-red-500/20 rounded-2xl">
+                                <AlertCircle className="w-5 h-5 text-red-400 flex-shrink-0" />
+                                <p className="text-red-400 text-sm font-semibold">{error}</p>
+                            </div>
+                        )}
 
                         {/* Login Button */}
                         <button

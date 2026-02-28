@@ -101,7 +101,7 @@ export default function AdminAnalyticsPage() {
     }
 
     const formatCurrency = (amount: number) => {
-        return `$${amount.toLocaleString('en-US', { minimumFractionDigits: 2, maximumFractionDigits: 2 })}`
+        return `UGX ${Math.round(amount).toLocaleString()}`
     }
 
     const formatNumber = (num: number) => {

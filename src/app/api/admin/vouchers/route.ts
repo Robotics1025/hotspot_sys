@@ -1,7 +1,7 @@
 import { db } from "@/db";
 import { vouchers, clients, plans } from "@/db/schema";
 import { NextResponse } from "next/server";
-import { eq, desc, and, sql } from "drizzle-orm";
+import { eq, desc, and, sql, inArray } from "drizzle-orm";
 import { generateVoucherCode } from "@/lib/vouchers";
 
 export async function GET(req: Request) {
@@ -54,8 +54,27 @@ export async function GET(req: Request) {
         }
         const [{ count }] = await countQuery;
 
+        // Status counts (unfiltered by status, but filtered by clientId if set)
+        const statusCountsRaw = await (clientId
+            ? db.select({ status: vouchers.status, count: sql<number>`count(*)` })
+                .from(vouchers)
+                .where(eq(vouchers.clientId, parseInt(clientId)))
+                .groupBy(vouchers.status)
+            : db.select({ status: vouchers.status, count: sql<number>`count(*)` })
+                .from(vouchers)
+                .groupBy(vouchers.status)
+        );
+
+        const statusCounts: Record<string, number> = { unused: 0, active: 0, expired: 0, disabled: 0 };
+        for (const row of statusCountsRaw) {
+            if (row.status && row.status in statusCounts) {
+                statusCounts[row.status] = Number(row.count);
+            }
+        }
+
         return NextResponse.json({
             vouchers: allVouchers,
+            statusCounts,
             pagination: {
                 total: Number(count),
                 page,
@@ -97,5 +116,25 @@ export async function POST(req: Request) {
     } catch (error) {
         console.error("Error creating vouchers:", error);
         return NextResponse.json({ error: "Failed to generate vouchers" }, { status: 500 });
+    }
+}
+
+export async function DELETE(req: Request) {
+    try {
+        const { searchParams } = new URL(req.url);
+        const id = searchParams.get('id');
+
+        if (!id) {
+            return NextResponse.json({ error: "Voucher ID is required" }, { status: 400 });
+        }
+
+        await db.update(vouchers)
+            .set({ status: "disabled" })
+            .where(eq(vouchers.id, parseInt(id)));
+
+        return NextResponse.json({ message: "Voucher disabled" });
+    } catch (error) {
+        console.error("Error disabling voucher:", error);
+        return NextResponse.json({ error: "Failed to disable voucher" }, { status: 500 });
     }
 }

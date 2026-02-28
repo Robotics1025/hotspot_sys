@@ -1,6 +1,7 @@
-import { pgTable, serial, text, integer, timestamp, decimal, varchar, pgEnum } from "drizzle-orm/pg-core";
+import { pgTable, serial, text, integer, timestamp, decimal, varchar, pgEnum, boolean } from "drizzle-orm/pg-core";
 
 export const voucherStatusEnum = pgEnum("voucher_status", ["unused", "active", "expired", "disabled"]);
+export const userRoleEnum = pgEnum("user_role", ["super_admin", "client_admin"]);
 
 export const clients = pgTable("clients", {
     id: serial("id").primaryKey(),
@@ -11,6 +12,23 @@ export const clients = pgTable("clients", {
     pesapalConsumerSecret: text("pesapal_consumer_secret"),
     pesapalIpnId: text("pesapal_ipn_id"),
     createdAt: timestamp("created_at").defaultNow(),
+});
+
+// ─── Users (Super Admins & Client Admins) ───────────────────────────────────
+export const users = pgTable("users", {
+    id: serial("id").primaryKey(),
+    email: varchar("email", { length: 255 }).notNull().unique(),
+    passwordHash: text("password_hash").notNull(),
+    name: text("name").notNull(),
+    role: userRoleEnum("role").default("client_admin").notNull(),
+    clientId: integer("client_id").references(() => clients.id), // null = super_admin
+    isActive: boolean("is_active").default(true).notNull(),
+    lastLoginAt: timestamp("last_login_at"),
+    createdAt: timestamp("created_at").defaultNow(),
+    // Notification preferences
+    notifEmail: boolean("notif_email").default(true).notNull(),
+    notifSystem: boolean("notif_system").default(true).notNull(),
+    notifOnboarding: boolean("notif_onboarding").default(false).notNull(),
 });
 
 export const routers = pgTable("routers", {

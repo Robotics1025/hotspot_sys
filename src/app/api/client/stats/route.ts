@@ -2,17 +2,16 @@ import { db } from "@/db";
 import { vouchers, transactions, plans, routers } from "@/db/schema";
 import { NextResponse } from "next/server";
 import { eq, sql, and } from "drizzle-orm";
+import { getSessionFromCookies } from "@/lib/auth";
 
-export async function GET(req: Request) {
+export async function GET() {
     try {
-        const { searchParams } = new URL(req.url);
-        const clientId = searchParams.get('clientId');
-
-        if (!clientId) {
-            return NextResponse.json({ error: "Client ID is required" }, { status: 400 });
+        const session = await getSessionFromCookies();
+        if (!session || session.role !== "client_admin" || !session.clientId) {
+            return NextResponse.json({ error: "Unauthorized" }, { status: 401 });
         }
 
-        const clientIdNum = parseInt(clientId);
+        const clientIdNum = session.clientId;
 
         // Get voucher statistics
         const [voucherStats] = await db.select({
