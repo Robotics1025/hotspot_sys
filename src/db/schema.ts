@@ -3,6 +3,30 @@ import { pgTable, serial, text, integer, timestamp, decimal, varchar, pgEnum, bo
 export const voucherStatusEnum = pgEnum("voucher_status", ["unused", "active", "expired", "disabled"]);
 export const userRoleEnum = pgEnum("user_role", ["super_admin", "client_admin"]);
 
+// ====================
+// AUTH TABLES
+// ====================
+
+export const adminUsers = pgTable("admin_users", {
+    id: serial("id").primaryKey(),
+    username: varchar("username", { length: 100 }).notNull().unique(),
+    email: varchar("email", { length: 255 }).notNull().unique(),
+    passwordHash: text("password_hash").notNull(),
+    createdAt: timestamp("created_at").defaultNow(),
+});
+
+export const clientUsers = pgTable("client_users", {
+    id: serial("id").primaryKey(),
+    clientId: integer("client_id").references(() => clients.id).notNull(),
+    username: varchar("username", { length: 100 }).notNull().unique(),
+    passwordHash: text("password_hash").notNull(),
+    createdAt: timestamp("created_at").defaultNow(),
+});
+
+// ====================
+// BUSINESS TABLES
+// ====================
+
 export const clients = pgTable("clients", {
     id: serial("id").primaryKey(),
     name: text("name").notNull(),
