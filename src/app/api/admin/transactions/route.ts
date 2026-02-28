@@ -14,26 +14,6 @@ export async function GET(req: Request) {
         const limit = parseInt(searchParams.get('limit') || '50');
         const offset = (page - 1) * limit;
 
-        let query = db.select({
-            id: transactions.id,
-            amount: transactions.amount,
-            commission: transactions.commission,
-            payout: transactions.payout,
-            status: transactions.status,
-            pesapalReference: transactions.pesapalReference,
-            createdAt: transactions.createdAt,
-            clientName: clients.name,
-            voucherCode: vouchers.code,
-            planName: plans.name,
-        })
-        .from(transactions)
-        .leftJoin(clients, eq(transactions.clientId, clients.id))
-        .leftJoin(vouchers, eq(transactions.voucherId, vouchers.id))
-        .leftJoin(plans, eq(vouchers.planId, plans.id))
-        .orderBy(desc(transactions.createdAt))
-        .limit(limit)
-        .offset(offset);
-
         // Add filters
         const conditions = [];
         if (clientId) {
@@ -48,32 +28,43 @@ export async function GET(req: Request) {
         if (endDate) {
             conditions.push(lte(transactions.createdAt, new Date(endDate)));
         }
-        
-        if (conditions.length > 0) {
-            query = query.where(and(...conditions));
-        }
 
-        const allTransactions = await query;
+        const whereClause = conditions.length > 0 ? and(...conditions) : undefined;
+
+        const allTransactions = await db.select({
+            id: transactions.id,
+            amount: transactions.amount,
+            commission: transactions.commission,
+            payout: transactions.payout,
+            status: transactions.status,
+            pesapalReference: transactions.pesapalReference,
+            createdAt: transactions.createdAt,
+            clientName: clients.name,
+            voucherCode: vouchers.code,
+            planName: plans.name,
+        })
+            .from(transactions)
+            .leftJoin(clients, eq(transactions.clientId, clients.id))
+            .leftJoin(vouchers, eq(transactions.voucherId, vouchers.id))
+            .leftJoin(plans, eq(vouchers.planId, plans.id))
+            .where(whereClause)
+            .orderBy(desc(transactions.createdAt))
+            .limit(limit)
+            .offset(offset);
 
         // Get total count for pagination
-        let countQuery = db.select({ count: sql<number>`count(*)` }).from(transactions);
-        if (conditions.length > 0) {
-            countQuery = countQuery.where(and(...conditions));
-        }
-        const [{ count }] = await countQuery;
+        const [{ count }] = await db.select({ count: sql<number>`count(*)` })
+            .from(transactions)
+            .where(whereClause);
 
         // Get summary statistics
-        let summaryQuery = db.select({
+        const [summary] = await db.select({
             totalAmount: sql<string>`sum(amount)`,
             totalCommission: sql<string>`sum(commission)`,
             totalPayout: sql<string>`sum(payout)`,
-        }).from(transactions);
-        
-        if (conditions.length > 0) {
-            summaryQuery = summaryQuery.where(and(...conditions));
-        }
-        
-        const [summary] = await summaryQuery;
+        })
+            .from(transactions)
+            .where(whereClause);
 
         return NextResponse.json({
             transactions: allTransactions,
@@ -101,8 +92,8 @@ export async function POST(req: Request) {
         const { clientId, voucherId, amount, commission, payout, status = 'pending', pesapalReference } = body;
 
         if (!clientId || !amount || commission === undefined || payout === undefined) {
-            return NextResponse.json({ 
-                error: "Client ID, amount, commission, and payout are required" 
+            return NextResponse.json({
+                error: "Client ID, amount, commission, and payout are required"
             }, { status: 400 });
         }
 

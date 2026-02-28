@@ -5,6 +5,8 @@ import "./globals.css";
 const inter = Inter({ subsets: ["latin"], variable: "--font-inter" });
 const outfit = Outfit({ subsets: ["latin"], variable: "--font-outfit" });
 
+export const dynamic = 'force-dynamic';
+
 export const metadata: Metadata = {
   title: "fastnet | Hotspot Billing System",
   description: "Next-generation multi-router hotspot billing platform",

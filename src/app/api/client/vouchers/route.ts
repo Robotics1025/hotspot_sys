@@ -14,7 +14,12 @@ export async function GET(req: Request) {
             return NextResponse.json({ error: "Client ID is required" }, { status: 400 });
         }
 
-        let query = db.select({
+        const conditions = [eq(vouchers.clientId, parseInt(clientId))];
+        if (status) {
+            conditions.push(eq(vouchers.status, status as any));
+        }
+
+        const clientVouchers = await db.select({
             id: vouchers.id,
             code: vouchers.code,
             status: vouchers.status,
@@ -27,19 +32,11 @@ export async function GET(req: Request) {
             planDuration: plans.duration,
             planSpeedLimit: plans.speedLimit,
         })
-        .from(vouchers)
-        .leftJoin(plans, eq(vouchers.planId, plans.id))
-        .where(eq(vouchers.clientId, parseInt(clientId)))
-        .orderBy(desc(vouchers.createdAt));
+            .from(vouchers)
+            .leftJoin(plans, eq(vouchers.planId, plans.id))
+            .where(and(...conditions))
+            .orderBy(desc(vouchers.createdAt));
 
-        if (status) {
-            query = query.where(and(
-                eq(vouchers.clientId, parseInt(clientId)),
-                eq(vouchers.status, status as any)
-            ));
-        }
-
-        const clientVouchers = await query;
         return NextResponse.json(clientVouchers);
     } catch (error) {
         console.error("Error fetching client vouchers:", error);
@@ -68,9 +65,9 @@ export async function POST(req: Request) {
 
         const newVouchers = await db.insert(vouchers).values(vouchersToCreate).returning();
 
-        return NextResponse.json({ 
+        return NextResponse.json({
             message: `Generated ${quantity} vouchers successfully`,
-            vouchers: newVouchers 
+            vouchers: newVouchers
         });
     } catch (error) {
         console.error("Error generating vouchers:", error);

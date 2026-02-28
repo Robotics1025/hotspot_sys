@@ -1,4 +1,4 @@
-interface ApiResponse<T> {
+export interface ApiResponse<T> {
     data?: T;
     error?: string;
     success: boolean;
@@ -41,7 +41,7 @@ export class ApiClient {
         options: FetchOptions = {}
     ): Promise<Response> {
         const { timeout = this.defaultTimeout, ...fetchOptions } = options;
-        
+
         const controller = new AbortController();
         const timeoutId = setTimeout(() => controller.abort(), timeout);
 
@@ -68,7 +68,7 @@ export class ApiClient {
             ...fetchOptions
         } = options;
 
-        let lastError: Error;
+        let lastError: Error = new Error('Unknown error');
 
         for (let attempt = 0; attempt <= retries; attempt++) {
             try {
@@ -88,7 +88,7 @@ export class ApiClient {
                 return { data, success: true };
             } catch (error) {
                 lastError = error instanceof Error ? error : new Error(String(error));
-                
+
                 // Don't retry on client errors (4xx)
                 if (error instanceof ApiError && error.status && error.status >= 400 && error.status < 500) {
                     break;
@@ -152,7 +152,7 @@ export const apiClient = new ApiClient();
 // Utility function for building query parameters
 export function buildQueryParams(params: Record<string, string | number | boolean | undefined | null>): string {
     const searchParams = new URLSearchParams();
-    
+
     Object.entries(params).forEach(([key, value]) => {
         if (value !== undefined && value !== null && value !== '') {
             searchParams.append(key, String(value));

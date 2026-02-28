@@ -1,26 +1,96 @@
+"use client"
+
 import DashboardLayout from "@/components/DashboardLayout"
-import { Users, User, Ticket, AlertCircle, Play, MoreHorizontal, ArrowUpRight } from "lucide-react"
+import { Users, Ticket, AlertCircle, Play, MoreHorizontal, ArrowUpRight, RefreshCw } from "lucide-react"
 import { cn } from "@/lib/utils"
+import { useState, useEffect } from "react"
 
-const stats = [
-    { name: "Active Users", value: "156", change: "+15.6%", icon: Users, color: "bg-blue-500" },
-    { name: "Vouchers Sold", value: "97", change: "+5.6%", icon: Ticket, color: "bg-emerald-500" },
-    { name: "Network Alerts", value: "07", change: "-1.1%", icon: AlertCircle, color: "bg-rose-500" },
-]
+interface ClientStats {
+    totalVouchers: number;
+    activeVouchers: number;
+    totalRevenue: number;
+}
 
-const recentActivity = [
-    { id: 1, user: "Nasi Goreng", plan: "1 Hour Plan", price: "$51", status: "Active" },
-    { id: 2, user: "Udang Semur", plan: "3 Hour Plan", price: "$56", status: "Active" },
-    { id: 3, user: "Meat Ball May", plan: "1 Day Plan", price: "$66", status: "Active" },
-]
+interface Plan {
+    id: number;
+    name: string;
+    duration: number;
+    speedLimit: string | null;
+    price: string;
+}
 
-const popularPlans = [
-    { name: "Fast Browse", speed: "2M/2M", price: "$66", duration: "1 Hour", color: "bg-orange-100" },
-    { name: "Heavy Stream", speed: "5M/5M", price: "$56", duration: "3 Hour", color: "bg-indigo-100" },
-    { name: "Daily Pass", speed: "10M/10M", price: "$51", duration: "1 Day", color: "bg-emerald-100" },
-]
+interface Transaction {
+    id: number;
+    amount: string;
+    payout: string;
+    voucherCode: string | null;
+    planName: string | null;
+    createdAt: string;
+}
+
+function formatDuration(seconds: number) {
+    const hours = Math.floor(seconds / 3600)
+    const days = Math.floor(hours / 24)
+    if (days > 0) return `${days} Day${days > 1 ? 's' : ''}`
+    if (hours > 0) return `${hours} Hour${hours > 1 ? 's' : ''}`
+    return `${Math.floor(seconds / 60)} Minutes`
+}
+
+const planColors = ["bg-orange-100", "bg-indigo-100", "bg-emerald-100", "bg-blue-100", "bg-rose-100"]
 
 export default function ClientDashboard() {
+    const [plans, setPlans] = useState<Plan[]>([])
+    const [recentTransactions, setRecentTransactions] = useState<Transaction[]>([])
+    const [stats, setStats] = useState<ClientStats>({ totalVouchers: 0, activeVouchers: 0, totalRevenue: 0 })
+    const [isLoading, setIsLoading] = useState(true)
+
+    useEffect(() => {
+        fetchData()
+    }, [])
+
+    const fetchData = async () => {
+        try {
+            setIsLoading(true)
+            const [plansRes, vouchersRes, transactionsRes] = await Promise.all([
+                fetch('/api/admin/plans'),
+                fetch('/api/admin/vouchers?limit=100'),
+                fetch('/api/admin/transactions?limit=5'),
+            ])
+
+            if (plansRes.ok) {
+                const plansData = await plansRes.json()
+                setPlans(plansData.slice(0, 3))
+            }
+            if (vouchersRes.ok) {
+                const vouchersData = await vouchersRes.json()
+                const vouchers = vouchersData.vouchers || []
+                setStats({
+                    totalVouchers: vouchersData.pagination?.total || 0,
+                    activeVouchers: vouchers.filter((v: any) => v.status === 'active').length,
+                    totalRevenue: 0,
+                })
+            }
+            if (transactionsRes.ok) {
+                const txData = await transactionsRes.json()
+                setRecentTransactions(txData.transactions || [])
+                setStats(prev => ({
+                    ...prev,
+                    totalRevenue: txData.summary?.totalPayout || 0
+                }))
+            }
+        } catch (error) {
+            console.error("Error fetching dashboard data:", error)
+        } finally {
+            setIsLoading(false)
+        }
+    }
+
+    const statCards = [
+        { name: "Active Vouchers", value: isLoading ? "..." : stats.activeVouchers.toString(), change: "+15.6%", icon: Ticket, color: "bg-blue-500" },
+        { name: "Total Vouchers", value: isLoading ? "..." : stats.totalVouchers.toString(), change: "+5.6%", icon: Users, color: "bg-emerald-500" },
+        { name: "Network Alerts", value: "0", change: "—", icon: AlertCircle, color: "bg-rose-500" },
+    ]
+
     return (
         <DashboardLayout>
             <div className="flex flex-col gap-10">
@@ -30,7 +100,7 @@ export default function ClientDashboard() {
                     <div className="absolute top-0 right-0 w-1/2 h-full bg-[url('https://images.unsplash.com/photo-1544197150-b99a580bb7a8?q=80&w=2070&auto=format&fit=crop')] bg-cover bg-center opacity-40 group-hover:scale-105 transition-transform duration-700" />
 
                     <div className="relative z-20 h-full flex flex-col justify-center px-12">
-                        <h1 className="text-4xl font-bold text-white mb-4 font-outfit">Welcome back, Joel!</h1>
+                        <h1 className="text-4xl font-bold text-white mb-4 font-outfit">Welcome back!</h1>
                         <p className="text-gray-400 max-w-md mb-8 leading-relaxed">
                             Manage your hotspot network and track your business performance in real-time.
                         </p>
@@ -47,11 +117,11 @@ export default function ClientDashboard() {
                         {/* Analytics Section */}
                         <div>
                             <div className="flex items-end justify-between mb-6">
-                                <h2 className="text-xl font-bold font-outfit">Analytic</h2>
+                                <h2 className="text-xl font-bold font-outfit">Analytics</h2>
                                 <button className="text-sm font-semibold text-gray-500 hover:text-orange-500">See more</button>
                             </div>
                             <div className="grid grid-cols-3 gap-6">
-                                {stats.map((stat) => (
+                                {statCards.map((stat) => (
                                     <div key={stat.name} className="bg-white p-6 rounded-3xl border border-gray-100 hover:border-orange-200 transition-all hover:shadow-lg hover:shadow-orange-500/5 group">
                                         <div className="flex justify-between items-start mb-4">
                                             <div className={cn("p-3 rounded-2xl text-white", stat.color)}>
@@ -69,40 +139,48 @@ export default function ClientDashboard() {
                             </div>
                         </div>
 
-                        {/* Popular Plans Section */}
+                        {/* Active Plans Section */}
                         <div>
                             <div className="flex items-end justify-between mb-6">
                                 <h2 className="text-xl font-bold font-outfit">Active Plans</h2>
                                 <button className="text-sm font-semibold text-gray-500 hover:text-orange-500">See more</button>
                             </div>
-                            <div className="grid grid-cols-3 gap-6">
-                                {popularPlans.map((plan) => (
-                                    <div key={plan.name} className="bg-white p-4 rounded-4xl border border-gray-100 hover:border-orange-200 transition-all group overflow-hidden">
-                                        <div className={cn("relative h-48 rounded-3xl mb-4 overflow-hidden", plan.color)}>
-                                            <div className="absolute inset-0 flex items-center justify-center opacity-20 transform -rotate-12">
-                                                <Ticket className="w-32 h-32" />
+                            {isLoading ? (
+                                <div className="flex items-center justify-center h-48">
+                                    <RefreshCw className="w-6 h-6 text-gray-300 animate-spin" />
+                                </div>
+                            ) : plans.length === 0 ? (
+                                <div className="text-center py-12 text-gray-400 text-sm">No plans created yet.</div>
+                            ) : (
+                                <div className="grid grid-cols-3 gap-6">
+                                    {plans.map((plan, index) => (
+                                        <div key={plan.id} className="bg-white p-4 rounded-4xl border border-gray-100 hover:border-orange-200 transition-all group overflow-hidden">
+                                            <div className={cn("relative h-48 rounded-3xl mb-4 overflow-hidden", planColors[index % planColors.length])}>
+                                                <div className="absolute inset-0 flex items-center justify-center opacity-20 transform -rotate-12">
+                                                    <Ticket className="w-32 h-32" />
+                                                </div>
+                                                <div className="absolute top-4 right-4 p-2 bg-white/50 backdrop-blur rounded-xl">
+                                                    <Ticket className="w-4 h-4 text-gray-900" />
+                                                </div>
                                             </div>
-                                            <div className="absolute top-4 right-4 p-2 bg-white/50 backdrop-blur rounded-xl">
-                                                <Ticket className="w-4 h-4 text-gray-900" />
+                                            <div className="px-2">
+                                                <div className="flex justify-between items-start mb-2">
+                                                    <h3 className="font-bold text-gray-900">{plan.name}</h3>
+                                                    <span className="text-lg font-bold text-orange-500">${Number(plan.price).toFixed(2)}</span>
+                                                </div>
+                                                <div className="flex items-center justify-between text-[10px] font-bold text-gray-400">
+                                                    <span>{formatDuration(plan.duration)}</span>
+                                                    <span className="px-2 py-1 bg-gray-50 rounded-md border border-gray-100">{plan.speedLimit || 'Unlimited'}</span>
+                                                </div>
                                             </div>
                                         </div>
-                                        <div className="px-2">
-                                            <div className="flex justify-between items-start mb-2">
-                                                <h3 className="font-bold text-gray-900">{plan.name}</h3>
-                                                <span className="text-lg font-bold text-orange-500">{plan.price}</span>
-                                            </div>
-                                            <div className="flex items-center justify-between text-[10px] font-bold text-gray-400">
-                                                <span>{plan.duration}</span>
-                                                <span className="px-2 py-1 bg-gray-50 rounded-md border border-gray-100">{plan.speed}</span>
-                                            </div>
-                                        </div>
-                                    </div>
-                                ))}
-                            </div>
+                                    ))}
+                                </div>
+                            )}
                         </div>
                     </div>
 
-                    {/* Sidebar / Recent Activity */}
+                    {/* Sidebar / Recent Transactions */}
                     <div className="col-span-4 flex flex-col gap-10">
                         <div className="bg-white p-8 rounded-4xl border border-gray-100">
                             <div className="flex items-center justify-between mb-6">
@@ -111,51 +189,39 @@ export default function ClientDashboard() {
                             </div>
 
                             <div className="space-y-6">
-                                {recentActivity.map((activity) => (
-                                    <div key={activity.id} className="flex items-center gap-4">
-                                        <div className="w-12 h-12 bg-gray-100 rounded-2xl flex items-center justify-center">
-                                            <User className="w-6 h-6 text-gray-400" />
-                                        </div>
-                                        <div className="flex-1">
-                                            <h4 className="text-sm font-bold text-gray-900">{activity.user}</h4>
-                                            <p className="text-[10px] text-gray-500 font-medium">{activity.plan}</p>
-                                        </div>
-                                        <div className="text-right">
-                                            <div className="text-sm font-bold text-gray-900">{activity.price}</div>
-                                        </div>
+                                {isLoading ? (
+                                    <div className="flex items-center justify-center h-24">
+                                        <RefreshCw className="w-6 h-6 text-gray-300 animate-spin" />
                                     </div>
-                                ))}
+                                ) : recentTransactions.length === 0 ? (
+                                    <div className="text-center py-6 text-gray-400 text-sm">No transactions yet.</div>
+                                ) : (
+                                    recentTransactions.map((tx) => (
+                                        <div key={tx.id} className="flex items-center gap-4">
+                                            <div className="w-12 h-12 bg-gray-100 rounded-2xl flex items-center justify-center">
+                                                <Ticket className="w-6 h-6 text-gray-400" />
+                                            </div>
+                                            <div className="flex-1">
+                                                <h4 className="text-sm font-bold text-gray-900">{tx.voucherCode || `#${tx.id}`}</h4>
+                                                <p className="text-[10px] text-gray-500 font-medium">{tx.planName || 'Direct sale'}</p>
+                                            </div>
+                                            <div className="text-right">
+                                                <div className="text-sm font-bold text-gray-900">${Number(tx.amount).toFixed(2)}</div>
+                                            </div>
+                                        </div>
+                                    ))
+                                )}
                             </div>
 
                             <div className="mt-8 pt-6 border-t border-gray-50 space-y-4">
                                 <div className="flex justify-between items-center text-sm">
-                                    <span className="text-gray-500 font-medium">Service Fee (15%)</span>
-                                    <span className="text-gray-900 font-bold">$1.00</span>
-                                </div>
-                                <div className="flex justify-between items-center text-lg font-bold">
-                                    <span className="text-gray-900">Total Payout</span>
-                                    <span className="text-orange-500">$1231.00</span>
+                                    <span className="text-gray-500 font-medium">Your Earnings (85%)</span>
+                                    <span className="text-gray-900 font-bold">${Number(stats.totalRevenue).toFixed(2)}</span>
                                 </div>
                                 <button className="w-full py-4 bg-orange-400 text-white font-bold rounded-2xl hover:bg-orange-500 transition-all flex items-center justify-center gap-2">
                                     <Ticket className="w-5 h-5" />
                                     Generate Report
                                 </button>
-                            </div>
-                        </div>
-
-                        {/* Address / Router Card */}
-                        <div className="bg-white p-8 rounded-4xl border border-gray-100">
-                            <h2 className="text-lg font-bold font-outfit mb-4">Site Location</h2>
-                            <div className="flex items-start gap-3 mb-4">
-                                <div className="w-5 h-5 mt-1 text-orange-500">
-                                    <AlertCircle className="w-full h-full" />
-                                </div>
-                                <p className="text-xs text-gray-600 leading-relaxed font-medium">
-                                    Main Cafe, Plot 42, St. Sraties, Entebbe.
-                                </p>
-                            </div>
-                            <div className="h-40 bg-gray-100 rounded-3xl overflow-hidden bg-[url('https://images.unsplash.com/photo-1524661135-423995f22d0b?q=80&w=2074&auto=format&fit=crop')] bg-cover bg-center">
-                                <div className="w-full h-full bg-black/20 hover:bg-black/0 transition-all cursor-pointer" />
                             </div>
                         </div>
                     </div>

@@ -24,7 +24,7 @@ export function AdminGuard({ children }: AdminGuardProps) {
     return null
   }
 
-  const session = window.localStorage.getItem("fastnet_session")
+  const session = typeof window !== "undefined" ? window.localStorage.getItem("fastnet_session") : null
   if (session !== "admin_active") {
     return null
   }
