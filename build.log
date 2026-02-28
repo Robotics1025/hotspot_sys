@@ -1,0 +1,81 @@
+
+> hotspot@0.1.0 build
+> next build
+
+▲ Next.js 16.1.6 (Turbopack)
+- Environments: .env
+
+⚠ The "middleware" file convention is deprecated. Please use "proxy" instead. Learn more: https://nextjs.org/docs/messages/middleware-to-proxy
+  Creating an optimized production build ...
+
+> Build error occurred
+Error: Turbopack build failed with 5 errors:
+./src/app/api/client/routers/route.ts:117:23
+Ecmascript file had an error
+[0m [90m 115 |[39m
+ [90m 116 |[39m
+[31m[1m>[22m[39m[90m 117 |[39m [36mexport[39m [36masync[39m [36mfunction[39m [33mGET[39m() {
+ [90m     |[39m                       [31m[1m^[22m[39m[31m[1m^[22m[39m[31m[1m^[22m[39m
+ [90m 118 |[39m     [36mtry[39m {
+ [90m 119 |[39m         [36mconst[39m session [33m=[39m [36mawait[39m getSessionFromCookies()[33m;[39m
+ [90m 120 |[39m         [36mif[39m ([33m![39msession [33m||[39m session[33m.[39mrole [33m!==[39m [32m"client_admin"[39m [33m||[39m [33m![39msession[33m.[39mclientId) {[0m
+
+the name `GET` is defined multiple times
+
+
+./src/app/api/client/routers/route.ts:136:23
+Ecmascript file had an error
+[0m [90m 134 |[39m }
+ [90m 135 |[39m
+[31m[1m>[22m[39m[90m 136 |[39m [36mexport[39m [36masync[39m [36mfunction[39m [33mPOST[39m(req[33m:[39m [33mRequest[39m) {
+ [90m     |[39m                       [31m[1m^[22m[39m[31m[1m^[22m[39m[31m[1m^[22m[39m[31m[1m^[22m[39m
+ [90m 137 |[39m     [36mtry[39m {
+ [90m 138 |[39m         [36mconst[39m body [33m=[39m [36mawait[39m req[33m.[39mjson()[33m;[39m
+ [90m 139 |[39m         [36mconst[39m { clientId[33m,[39m name[33m,[39m ip[33m,[39m secret[33m,[39m version [33m=[39m [32m'v6'[39m } [33m=[39m body[33m;[39m[0m
+
+the name `POST` is defined multiple times
+
+
+./src/app/api/client/routers/route.ts:173:23
+Ecmascript file had an error
+[0m [90m 171 |[39m }
+ [90m 172 |[39m
+[31m[1m>[22m[39m[90m 173 |[39m [36mexport[39m [36masync[39m [36mfunction[39m [33mPUT[39m(req[33m:[39m [33mRequest[39m) {
+ [90m     |[39m                       [31m[1m^[22m[39m[31m[1m^[22m[39m[31m[1m^[22m[39m
+ [90m 174 |[39m     [36mtry[39m {
+ [90m 175 |[39m         [36mconst[39m body [33m=[39m [36mawait[39m req[33m.[39mjson()[33m;[39m
+ [90m 176 |[39m         [36mconst[39m { id[33m,[39m clientId[33m,[39m name[33m,[39m ip[33m,[39m secret[33m,[39m version } [33m=[39m body[33m;[39m[0m
+
+the name `PUT` is defined multiple times
+
+
+./src/app/admin/clients/new/page.tsx:118:27
+Parsing ecmascript source code failed
+[0m [90m 116 |[39m                         )}
+ [90m 117 |[39m                     [33m<[39m[33m/[39m[33mdiv[39m[33m>[39m
+[31m[1m>[22m[39m[90m 118 |[39m                     [33m<[39m[33m/[39m[33mdiv[39m[33m>[39m
+ [90m     |[39m                           [31m[1m^[22m[39m
+[31m[1m>[22m[39m[90m 119 |[39m                 [33m<[39m[33m/[39m[33mform[39m[33m>[39m
+ [90m     |[39m [31m[1m^[22m[39m[31m[1m^[22m[39m[31m[1m^[22m[39m[31m[1m^[22m[39m[31m[1m^[22m[39m[31m[1m^[22m[39m[31m[1m^[22m[39m[31m[1m^[22m[39m[31m[1m^[22m[39m[31m[1m^[22m[39m[31m[1m^[22m[39m[31m[1m^[22m[39m[31m[1m^[22m[39m[31m[1m^[22m[39m[31m[1m^[22m[39m[31m[1m^[22m[39m[31m[1m^[22m[39m
+ [90m 120 |[39m             [33m<[39m[33m/[39m[33mdiv[39m[33m>[39m
+ [90m 121 |[39m         [33m<[39m[33m/[39m[33mDashboardLayout[39m[33m>[39m
+ [90m 122 |[39m     )[0m
+
+Expected '</', got 'jsx text'
+
+
+./src/app/client/routers/page.tsx:39:1
+Parsing ecmascript source code failed
+[0m [90m 37 |[39m
+ [90m 38 |[39m     )[33m;[39m
+[31m[1m>[22m[39m[90m 39 |[39m
+ [90m    |[39m [31m[1m^[22m[39m[0m
+
+Expected '}', got '<eof>'
+
+
+    at <unknown> (./src/app/api/client/routers/route.ts:117:23)
+    at <unknown> (./src/app/api/client/routers/route.ts:136:23)
+    at <unknown> (./src/app/api/client/routers/route.ts:173:23)
+    at <unknown> (./src/app/admin/clients/new/page.tsx:118:27)
+    at <unknown> (./src/app/client/routers/page.tsx:39:1)

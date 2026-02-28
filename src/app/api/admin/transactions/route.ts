@@ -3,6 +3,8 @@ import { transactions, clients, vouchers, plans } from "@/db/schema";
 import { NextResponse } from "next/server";
 import { eq, desc, and, sql, gte, lte } from "drizzle-orm";
 
+export const dynamic = 'force-dynamic';
+
 export async function GET(req: Request) {
     try {
         const { searchParams } = new URL(req.url);

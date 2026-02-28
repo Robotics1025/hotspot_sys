@@ -4,7 +4,7 @@ import DashboardLayout from "@/components/DashboardLayout"
 import { Router as RouterIcon, Signal, Wifi, Activity, MoreVertical, Plus, Settings, ShieldCheck, RefreshCw } from "lucide-react"
 import { cn } from "@/lib/utils"
 import { useState } from "react"
-import ClientGuard from "@/components/ClientGuard"
+import { ClientGuard } from "@/components/ClientGuard"
 
 
 const initialRouters = [
@@ -22,7 +22,7 @@ function RoutersContent() {
     // ...existing code...
     return (
         <DashboardLayout>
-            {/* ...existing code... */}
+            <div className="p-8 text-center text-gray-500">Router Management (Coming Soon)</div>
         </DashboardLayout>
     );
 }
@@ -36,3 +36,4 @@ export default function RoutersPage() {
         </ClientGuard>
 
     );
+}

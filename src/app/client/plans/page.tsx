@@ -1,4 +1,4 @@
-
+﻿
 "use client"
 
 import DashboardLayout from "@/components/DashboardLayout"
@@ -125,7 +125,7 @@ export default function PlansPage() {
                                         </div>
                                         <div>
                                             <p className="text-[10px] text-gray-400 font-bold uppercase">Price</p>
-                                            <p className="text-xs font-bold text-gray-700">${Number(plan.price).toFixed(2)}</p>
+                                            <p className="text-xs font-bold text-gray-700">UGX {Number(plan.price).toLocaleString()}</p>
                                         </div>
                                     </div>
                                 </div>
@@ -158,3 +158,4 @@ export default function PlansPage() {
         </DashboardLayout>
     )
 }
+

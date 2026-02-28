@@ -8,7 +8,7 @@ export async function GET(req: Request) {
         const { searchParams } = new URL(req.url);
         const period = searchParams.get('period') || '30'; // days
         const clientId = searchParams.get('clientId');
-        
+
         const daysAgo = new Date();
         daysAgo.setDate(daysAgo.getDate() - parseInt(period));
 
@@ -25,10 +25,10 @@ export async function GET(req: Request) {
             totalPayout: sql<string>`sum(payout)`,
             transactionCount: sql<number>`count(*)`,
         })
-        .from(transactions)
-        .where(and(...revenueFilters))
-        .groupBy(sql`date(created_at)`)
-        .orderBy(sql`date(created_at)`);
+            .from(transactions)
+            .where(and(...revenueFilters))
+            .groupBy(sql`date(created_at)`)
+            .orderBy(sql`date(created_at)`);
 
         // Voucher analytics
         // Build voucher filter
@@ -43,10 +43,10 @@ export async function GET(req: Request) {
             unusedVouchers: sql<number>`count(*) filter (where status = 'unused')`,
             expiredVouchers: sql<number>`count(*) filter (where status = 'expired')`,
         })
-        .from(vouchers)
-        .where(and(...voucherFilters))
-        .groupBy(sql`date(created_at)`)
-        .orderBy(sql`date(created_at)`);
+            .from(vouchers)
+            .where(and(...voucherFilters))
+            .groupBy(sql`date(created_at)`)
+            .orderBy(sql`date(created_at)`);
 
         // Top performing plans
         const topPlansQuery = db.select({
@@ -54,15 +54,15 @@ export async function GET(req: Request) {
             planName: plans.name,
             planPrice: plans.price,
             voucherCount: sql<number>`count(${vouchers.id})`,
-            totalRevenue: sql<string>`sum(${plans.price}::numeric * count(${vouchers.id}))`,
+            totalRevenue: sql<string>`coalesce(sum(${plans.price}::numeric), 0)`,
             clientName: clients.name,
         }).from(plans)
-        .leftJoin(vouchers, eq(plans.id, vouchers.planId))
-        .leftJoin(clients, eq(plans.clientId, clients.id))
-        .where(gte(vouchers.createdAt, daysAgo))
-        .groupBy(plans.id, plans.name, plans.price, clients.name)
-        .orderBy(sql`count(${vouchers.id}) desc`)
-        .limit(10);
+            .leftJoin(vouchers, eq(plans.id, vouchers.planId))
+            .leftJoin(clients, eq(plans.clientId, clients.id))
+            .where(gte(vouchers.createdAt, daysAgo))
+            .groupBy(plans.id, plans.name, plans.price, clients.name)
+            .orderBy(sql`count(${vouchers.id}) desc`)
+            .limit(10);
 
         const topPlans = await topPlansQuery;
 
@@ -75,17 +75,17 @@ export async function GET(req: Request) {
             transactionCount: sql<number>`count(${transactions.id})`,
             voucherCount: sql<number>`count(distinct ${vouchers.id})`,
         }).from(clients)
-        .leftJoin(transactions, and(
-            eq(clients.id, transactions.clientId),
-            gte(transactions.createdAt, daysAgo)
-        ))
-        .leftJoin(vouchers, and(
-            eq(clients.id, vouchers.clientId),
-            gte(vouchers.createdAt, daysAgo)
-        ))
-        .groupBy(clients.id, clients.name)
-        .orderBy(sql`coalesce(sum(${transactions.amount}), 0) desc`)
-        .limit(10);
+            .leftJoin(transactions, and(
+                eq(clients.id, transactions.clientId),
+                gte(transactions.createdAt, daysAgo)
+            ))
+            .leftJoin(vouchers, and(
+                eq(clients.id, vouchers.clientId),
+                gte(vouchers.createdAt, daysAgo)
+            ))
+            .groupBy(clients.id, clients.name)
+            .orderBy(sql`coalesce(sum(${transactions.amount}), 0) desc`)
+            .limit(10);
 
         const topClients = await topClientsQuery;
 
@@ -101,8 +101,8 @@ export async function GET(req: Request) {
             totalPayout: sql<string>`coalesce(sum(payout), '0')`,
             transactionCount: sql<number>`count(*)`,
         })
-        .from(transactions)
-        .where(and(...summaryFilters));
+            .from(transactions)
+            .where(and(...summaryFilters));
 
         return NextResponse.json({
             period: parseInt(period),

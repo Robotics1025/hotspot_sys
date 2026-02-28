@@ -28,7 +28,6 @@ const adminNavItems = [
     { name: "Overview", href: "/admin", icon: Home },
     { name: "Analytics", href: "/admin/analytics", icon: BarChart3 },
     { name: "Clients", href: "/admin/clients", icon: Users },
-    { name: "Vouchers", href: "/admin/vouchers", icon: Ticket },
     { name: "Transactions", href: "/admin/transactions", icon: DollarSign },
     { name: "Routers", href: "/admin/routers", icon: Router },
     { name: "Scripts", href: "/admin/scripts", icon: Terminal },

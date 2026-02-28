@@ -3,6 +3,8 @@ import { clients, transactions } from "@/db/schema";
 import { NextResponse } from "next/server";
 import { desc } from "drizzle-orm";
 
+export const dynamic = 'force-dynamic';
+
 export async function GET() {
     try {
         const [recentClients, recentTransactions] = await Promise.all([
@@ -29,7 +31,7 @@ export async function GET() {
                 id: `txn-${t.id}`,
                 type: "payment" as const,
                 title: t.status === "completed" ? "Payment Received" : `Payment ${t.status}`,
-                detail: `$${Number(t.amount).toFixed(2)} via PesaPal`,
+                detail: `UGX ${Number(t.amount).toLocaleString()} via PesaPal`,
                 time: t.createdAt,
             })),
         ]

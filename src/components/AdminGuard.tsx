@@ -3,8 +3,6 @@
 import { useRouter } from "next/navigation"
 import { useEffect, useState } from "react"
 
-const isBrowser = typeof window !== "undefined";
-
 interface AdminGuardProps {
   children: React.ReactNode;
 }
@@ -29,15 +27,9 @@ export function AdminGuard({ children }: AdminGuardProps) {
       .finally(() => setChecked(true));
   }, [router]);
 
-  if (!isBrowser || !checked || !authorized) {
-    return null;
-  }
-
-  const session = window.localStorage.getItem("fastnet_session");
-  if (session !== "admin_active") {
+  if (!checked || !authorized) {
     return null;
   }
 
   return <>{children}</>;
 }
-

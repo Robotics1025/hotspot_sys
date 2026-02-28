@@ -91,8 +91,8 @@ export const transactions = pgTable("transactions", {
     clientId: integer("client_id").references(() => clients.id).notNull(),
     voucherId: integer("voucher_id").references(() => vouchers.id),
     amount: decimal("amount", { precision: 12, scale: 2 }).notNull(),
-    commission: decimal("commission", { precision: 12, scale: 2 }).notNull(), // 15%
-    payout: decimal("payout", { precision: 12, scale: 2 }).notNull(), // 85%
+    commission: decimal("commission", { precision: 12, scale: 2 }).notNull(), // 10%
+    payout: decimal("payout", { precision: 12, scale: 2 }).notNull(), // 90%
     status: varchar("status", { length: 20 }).notNull(), // pending, completed, failed
     pesapalReference: text("pesapal_reference"),
     createdAt: timestamp("created_at").defaultNow(),

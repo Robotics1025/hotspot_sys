@@ -1,0 +1,6 @@
+﻿src/app/admin/clients/new/page.tsx(62,18): error TS17008: JSX element 'form' has no corresponding closing tag.
+src/app/admin/clients/new/page.tsx(119,19): error TS17002: Expected corresponding JSX closing tag for 'DashboardLayout'.
+src/app/admin/clients/new/page.tsx(120,13): error TS1005: ')' expected.
+src/app/admin/clients/new/page.tsx(121,9): error TS1109: Expression expected.
+src/app/admin/clients/new/page.tsx(122,5): error TS1109: Expression expected.
+src/app/client/routers/page.tsx(39,1): error TS1005: '}' expected.

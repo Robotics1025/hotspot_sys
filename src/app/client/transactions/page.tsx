@@ -2,10 +2,10 @@
 
 import DashboardLayout from "@/components/DashboardLayout"
 import { ClientGuard } from "@/components/ClientGuard"
-import { 
-    DollarSign, 
-    Search, 
-    Download, 
+import {
+    DollarSign,
+    Search,
+    Download,
     Calendar,
     RefreshCw,
     Check,
@@ -70,7 +70,7 @@ function ClientTransactionsContent() {
         limit: 30,
         totalPages: 0
     })
-    
+
     // Filters
     const [filters, setFilters] = useState({
         status: '',
@@ -95,7 +95,7 @@ function ClientTransactionsContent() {
 
             const res = await fetch(`/api/client/transactions?${params}`)
             const data: TransactionsResponse = await res.json()
-            
+
             if (res.ok) {
                 setTransactions(data.transactions)
                 setSummary(data.summary)
@@ -133,16 +133,16 @@ function ClientTransactionsContent() {
                         <h1 className="text-3xl font-bold font-outfit text-gray-900">Transaction History</h1>
                         <p className="text-gray-500 text-sm mt-1">Track your voucher sales and revenue performance.</p>
                     </div>
-                    
+
                     <div className="flex items-center gap-3">
-                        <button 
+                        <button
                             onClick={fetchTransactions}
                             className="flex items-center gap-2 px-4 py-2 bg-gray-100 text-gray-700 rounded-xl hover:bg-gray-200 transition-all"
                         >
                             <RefreshCw className="w-4 h-4" />
                             <span>Refresh</span>
                         </button>
-                        
+
                         <button className="flex items-center gap-2 px-4 py-2 bg-gray-100 text-gray-700 rounded-xl hover:bg-gray-200 transition-all">
                             <Download className="w-4 h-4" />
                             <span>Export</span>
@@ -168,7 +168,7 @@ function ClientTransactionsContent() {
                         <div className="flex items-center justify-between">
                             <div>
                                 <p className="text-2xl font-bold text-gray-900">{formatCurrency(summary.totalPayout)}</p>
-                                <p className="text-sm text-gray-500 mt-1">Your Earnings (85%)</p>
+                                <p className="text-sm text-gray-500 mt-1">Your Earnings (90%)</p>
                             </div>
                             <div className="w-12 h-12 bg-blue-100 text-blue-600 rounded-4xl flex items-center justify-center">
                                 <CreditCard className="w-6 h-6" />
@@ -202,7 +202,7 @@ function ClientTransactionsContent() {
                             <option value="completed">Completed</option>
                             <option value="failed">Failed</option>
                         </select>
-                        
+
                         <input
                             type="date"
                             value={filters.startDate}
@@ -210,7 +210,7 @@ function ClientTransactionsContent() {
                             className="px-4 py-3 bg-gray-50 border border-gray-200 rounded-xl focus:outline-none focus:ring-2 focus:ring-orange-500/20 focus:border-orange-500"
                             placeholder="Start Date"
                         />
-                        
+
                         <input
                             type="date"
                             value={filters.endDate}
@@ -218,7 +218,7 @@ function ClientTransactionsContent() {
                             className="px-4 py-3 bg-gray-50 border border-gray-200 rounded-xl focus:outline-none focus:ring-2 focus:ring-orange-500/20 focus:border-orange-500"
                             placeholder="End Date"
                         />
-                        
+
                         <button
                             onClick={() => setFilters({ status: '', startDate: '', endDate: '' })}
                             className="px-4 py-3 bg-gray-100 text-gray-600 rounded-xl hover:bg-gray-200 transition-all"
@@ -253,7 +253,7 @@ function ClientTransactionsContent() {
                                         {transactions.map((transaction) => {
                                             const StatusIcon = statusConfig[transaction.status as keyof typeof statusConfig]?.icon || AlertCircle
                                             const statusStyle = statusConfig[transaction.status as keyof typeof statusConfig]?.color || 'bg-gray-100 text-gray-700'
-                                            
+
                                             return (
                                                 <tr key={transaction.id} className="hover:bg-gray-50/50 transition-colors">
                                                     <td className="p-6">
@@ -269,7 +269,7 @@ function ClientTransactionsContent() {
                                                             </div>
                                                         </div>
                                                     </td>
-                                                    
+
                                                     <td className="p-6">
                                                         {transaction.voucherCode ? (
                                                             <div className="flex items-center gap-2">
@@ -280,19 +280,19 @@ function ClientTransactionsContent() {
                                                             <span className="text-gray-400">-</span>
                                                         )}
                                                     </td>
-                                                    
+
                                                     <td className="p-6">
                                                         <span className="text-sm text-gray-900">{transaction.planName || '-'}</span>
                                                     </td>
-                                                    
+
                                                     <td className="p-6">
                                                         <span className="font-bold text-gray-900">{formatCurrency(transaction.amount)}</span>
                                                     </td>
-                                                    
+
                                                     <td className="p-6">
                                                         <span className="font-bold text-emerald-600">{formatCurrency(transaction.payout)}</span>
                                                     </td>
-                                                    
+
                                                     <td className="p-6">
                                                         <div className={cn(
                                                             "inline-flex items-center gap-2 px-3 py-1 rounded-full text-xs font-bold",
@@ -302,7 +302,7 @@ function ClientTransactionsContent() {
                                                             {statusConfig[transaction.status as keyof typeof statusConfig]?.label || transaction.status}
                                                         </div>
                                                     </td>
-                                                    
+
                                                     <td className="p-6">
                                                         <div className="text-sm text-gray-900">
                                                             {formatDate(transaction.createdAt)}
@@ -322,7 +322,7 @@ function ClientTransactionsContent() {
                                         <p className="text-sm text-gray-500">
                                             Showing {((pagination.page - 1) * pagination.limit) + 1} to {Math.min(pagination.page * pagination.limit, pagination.total)} of {pagination.total} transactions
                                         </p>
-                                        
+
                                         <div className="flex items-center gap-2">
                                             <button
                                                 onClick={() => setPagination({ ...pagination, page: pagination.page - 1 })}
@@ -331,7 +331,7 @@ function ClientTransactionsContent() {
                                             >
                                                 Previous
                                             </button>
-                                            
+
                                             {[...Array(Math.min(5, pagination.totalPages))].map((_, i) => {
                                                 const pageNum = i + 1
                                                 return (
@@ -349,7 +349,7 @@ function ClientTransactionsContent() {
                                                     </button>
                                                 )
                                             })}
-                                            
+
                                             <button
                                                 onClick={() => setPagination({ ...pagination, page: pagination.page + 1 })}
                                                 disabled={pagination.page === pagination.totalPages}

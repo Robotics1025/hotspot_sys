@@ -3,6 +3,8 @@ import { clients, transactions } from "@/db/schema";
 import { NextResponse } from "next/server";
 import { desc, eq } from "drizzle-orm";
 
+export const dynamic = 'force-dynamic';
+
 export async function GET() {
     try {
         const [recentClients, failedTxns, pendingTxns] = await Promise.all([
@@ -35,16 +37,16 @@ export async function GET() {
             ...failedTxns.map(t => ({
                 id: `fail-${t.id}`,
                 title: "Payment Failed",
-                description: `A transaction of $${Number(t.amount).toFixed(2)} failed. Client ID #${t.clientId}.`,
+                description: `A transaction of UGX ${Number(t.amount).toLocaleString()} failed. Client ID #${t.clientId}.`,
                 time: t.createdAt,
-                type: "alert",
+                type: "system",
                 priority: "high",
                 unread: true,
             })),
             ...pendingTxns.map(t => ({
                 id: `pending-${t.id}`,
                 title: "Pending Payment",
-                description: `A transaction of $${Number(t.amount).toFixed(2)} is awaiting confirmation. Client ID #${t.clientId}.`,
+                description: `A transaction of UGX ${Number(t.amount).toLocaleString()} is awaiting confirmation. Client ID #${t.clientId}.`,
                 time: t.createdAt,
                 type: "payment",
                 priority: "low",

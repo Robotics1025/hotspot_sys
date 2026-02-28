@@ -4,6 +4,8 @@ import { NextResponse } from "next/server";
 import { eq, desc, and, sql, inArray } from "drizzle-orm";
 import { generateVoucherCode } from "@/lib/vouchers";
 
+export const dynamic = 'force-dynamic';
+
 export async function GET(req: Request) {
     try {
         const { searchParams } = new URL(req.url);

@@ -4,6 +4,7 @@ import DashboardLayout from "@/components/DashboardLayout"
 // import { AdminGuard } from "@/components/AdminGuard"
 import { Building2, Save, X, Phone, Key, Shield } from "lucide-react"
 import { useRouter } from "next/navigation"
+import { useState } from "react"
 
 
 export default function AddClient() {
@@ -13,7 +14,7 @@ export default function AddClient() {
     const [isLoading, setIsLoading] = useState(false);
     const [error, setError] = useState<string | null>(null);
     const [success, setSuccess] = useState(false);
-    const [credentials, setCredentials] = useState<{username?: string; email?: string; password?: string}>({});
+    const [credentials, setCredentials] = useState<{ username?: string; email?: string; password?: string }>({});
 
     const handleSubmit = async (e: React.FormEvent) => {
         e.preventDefault();
@@ -41,7 +42,7 @@ export default function AddClient() {
         } finally {
             setIsLoading(false);
         }
-    } 
+    }
 
     return (
         <DashboardLayout>
@@ -114,7 +115,6 @@ export default function AddClient() {
                                 <b>Password:</b> {credentials.password || "-"}
                             </div>
                         )}
-                    </div>
                     </div>
                 </form>
             </div>

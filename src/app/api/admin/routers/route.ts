@@ -3,6 +3,8 @@ import { routers, clients } from "@/db/schema";
 import { NextResponse } from "next/server";
 import { eq } from "drizzle-orm";
 
+export const dynamic = 'force-dynamic';
+
 export async function GET() {
     try {
         const allRouters = await db.select({
