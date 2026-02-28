@@ -3,24 +3,42 @@
 import Link from "next/link"
 import { useState } from "react"
 import { useRouter } from "next/navigation"
-import { Zap, Mail, Lock, Eye, EyeOff, ArrowRight, Loader2 } from "lucide-react"
+import { Zap, User, Lock, Eye, EyeOff, ArrowRight, Loader2, AlertCircle } from "lucide-react"
 
 
 export default function AdminLogin() {
     const [showPassword, setShowPassword] = useState(false)
     const [isLoading, setIsLoading] = useState(false)
+    const [error, setError] = useState("")
+    const [username, setUsername] = useState("")
+    const [password, setPassword] = useState("")
     const router = useRouter()
 
-    const handleLogin = (e: React.FormEvent) => {
+    const handleLogin = async (e: React.FormEvent) => {
         e.preventDefault()
         setIsLoading(true)
+        setError("")
 
-        // Simulate login and session storage
-        setTimeout(() => {
+        try {
+            const res = await fetch('/api/auth/admin', {
+                method: 'POST',
+                headers: { 'Content-Type': 'application/json' },
+                body: JSON.stringify({ username, password }),
+            })
+            const data = await res.json()
+
+            if (res.ok && data.success) {
+                localStorage.setItem("fastnet_session", "admin_active")
+                localStorage.setItem("fastnet_admin", JSON.stringify(data.admin))
+                router.push("/admin")
+            } else {
+                setError(data.error || "Invalid credentials")
+            }
+        } catch {
+            setError("Unable to connect. Please try again.")
+        } finally {
             setIsLoading(false)
-            localStorage.setItem("fastnet_session", "admin_active")
-            router.push("/admin")
-        }, 1500)
+        }
     }
 
 
@@ -48,14 +66,24 @@ export default function AdminLogin() {
                 {/* Login Form Card */}
                 <div className="bg-white/5 border border-white/10 p-10 rounded-[40px] shadow-2xl backdrop-blur-xl">
                     <form onSubmit={handleLogin} className="space-y-6">
-                        {/* Email Input */}
+                        {/* Error Banner */}
+                        {error && (
+                            <div className="flex items-center gap-3 p-4 bg-red-500/10 border border-red-500/20 rounded-2xl">
+                                <AlertCircle className="w-5 h-5 text-red-400 shrink-0" />
+                                <p className="text-sm text-red-400 font-medium">{error}</p>
+                            </div>
+                        )}
+
+                        {/* Username Input */}
                         <div className="space-y-2">
-                            <label className="text-xs font-black text-gray-400 uppercase tracking-widest ml-1">Admin Email</label>
+                            <label className="text-xs font-black text-gray-400 uppercase tracking-widest ml-1">Admin Username</label>
                             <div className="relative group">
-                                <Mail className="absolute left-4 top-1/2 -translate-y-1/2 w-5 h-5 text-gray-500 group-focus-within:text-purple-400 transition-colors" />
+                                <User className="absolute left-4 top-1/2 -translate-y-1/2 w-5 h-5 text-gray-500 group-focus-within:text-purple-400 transition-colors" />
                                 <input
-                                    type="email"
-                                    placeholder="admin@fastnet.systems"
+                                    type="text"
+                                    placeholder="e.g. superadmin"
+                                    value={username}
+                                    onChange={(e) => setUsername(e.target.value)}
                                     className="w-full bg-white/5 border border-white/5 rounded-2xl py-4 pl-12 pr-4 text-white text-sm outline-none focus:border-purple-500/50 focus:bg-white/10 transition-all"
                                     required
                                 />
@@ -73,6 +101,8 @@ export default function AdminLogin() {
                                 <input
                                     type={showPassword ? "text" : "password"}
                                     placeholder="••••••••"
+                                    value={password}
+                                    onChange={(e) => setPassword(e.target.value)}
                                     className="w-full bg-white/5 border border-white/5 rounded-2xl py-4 pl-12 pr-12 text-white text-sm outline-none focus:border-purple-500/50 focus:bg-white/10 transition-all font-mono"
                                     required
                                 />
