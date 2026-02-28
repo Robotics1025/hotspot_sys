@@ -1,14 +1,19 @@
 import { db } from "@/db";
 import { plans, clients } from "@/db/schema";
 import { NextResponse } from "next/server";
-import { eq, desc } from "drizzle-orm";
+import { eq, desc, and } from "drizzle-orm";
 
 export async function GET(req: Request) {
     try {
         const { searchParams } = new URL(req.url);
         const clientId = searchParams.get('clientId');
 
-        let query = db.select({
+        const conditions = [];
+        if (clientId) {
+            conditions.push(eq(plans.clientId, parseInt(clientId)));
+        }
+
+        const allPlans = await db.select({
             id: plans.id,
             name: plans.name,
             duration: plans.duration,
@@ -18,15 +23,10 @@ export async function GET(req: Request) {
             clientName: clients.name,
             clientId: plans.clientId,
         })
-        .from(plans)
-        .leftJoin(clients, eq(plans.clientId, clients.id))
-        .orderBy(desc(plans.createdAt));
-
-        if (clientId) {
-            query = query.where(eq(plans.clientId, parseInt(clientId)));
-        }
-
-        const allPlans = await query;
+            .from(plans)
+            .leftJoin(clients, eq(plans.clientId, clients.id))
+            .where(conditions.length > 0 ? and(...conditions) : undefined)
+            .orderBy(desc(plans.createdAt));
         return NextResponse.json(allPlans);
     } catch (error) {
         console.error("Error fetching plans:", error);
@@ -40,8 +40,8 @@ export async function POST(req: Request) {
         const { clientId, name, duration, speedLimit, price } = body;
 
         if (!clientId || !name || !duration || !price) {
-            return NextResponse.json({ 
-                error: "Client ID, name, duration, and price are required" 
+            return NextResponse.json({
+                error: "Client ID, name, duration, and price are required"
             }, { status: 400 });
         }
 

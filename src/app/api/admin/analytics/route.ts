@@ -13,46 +13,40 @@ export async function GET(req: Request) {
         daysAgo.setDate(daysAgo.getDate() - parseInt(period));
 
         // Revenue analytics
-        let revenueQuery = db.select({
+        // Build revenue filter
+        const revenueFilters = [gte(transactions.createdAt, daysAgo)];
+        if (clientId) {
+            revenueFilters.push(eq(transactions.clientId, parseInt(clientId)));
+        }
+        const revenueData = await db.select({
             date: sql<string>`date(created_at)`,
             totalAmount: sql<string>`sum(amount)`,
             totalCommission: sql<string>`sum(commission)`,
             totalPayout: sql<string>`sum(payout)`,
             transactionCount: sql<number>`count(*)`,
-        }).from(transactions)
-        .where(gte(transactions.createdAt, daysAgo))
+        })
+        .from(transactions)
+        .where(and(...revenueFilters))
         .groupBy(sql`date(created_at)`)
         .orderBy(sql`date(created_at)`);
 
-        if (clientId) {
-            revenueQuery = revenueQuery.where(and(
-                gte(transactions.createdAt, daysAgo),
-                eq(transactions.clientId, parseInt(clientId))
-            ));
-        }
-
-        const revenueData = await revenueQuery;
-
         // Voucher analytics
-        let voucherQuery = db.select({
+        // Build voucher filter
+        const voucherFilters = [gte(vouchers.createdAt, daysAgo)];
+        if (clientId) {
+            voucherFilters.push(eq(vouchers.clientId, parseInt(clientId)));
+        }
+        const voucherData = await db.select({
             date: sql<string>`date(created_at)`,
             totalVouchers: sql<number>`count(*)`,
             activeVouchers: sql<number>`count(*) filter (where status = 'active')`,
             unusedVouchers: sql<number>`count(*) filter (where status = 'unused')`,
             expiredVouchers: sql<number>`count(*) filter (where status = 'expired')`,
-        }).from(vouchers)
-        .where(gte(vouchers.createdAt, daysAgo))
+        })
+        .from(vouchers)
+        .where(and(...voucherFilters))
         .groupBy(sql`date(created_at)`)
         .orderBy(sql`date(created_at)`);
-
-        if (clientId) {
-            voucherQuery = voucherQuery.where(and(
-                gte(vouchers.createdAt, daysAgo),
-                eq(vouchers.clientId, parseInt(clientId))
-            ));
-        }
-
-        const voucherData = await voucherQuery;
 
         // Top performing plans
         const topPlansQuery = db.select({
@@ -96,22 +90,19 @@ export async function GET(req: Request) {
         const topClients = await topClientsQuery;
 
         // Platform summary
-        let summaryQuery = db.select({
+        // Platform summary
+        const summaryFilters = [gte(transactions.createdAt, daysAgo)];
+        if (clientId) {
+            summaryFilters.push(eq(transactions.clientId, parseInt(clientId)));
+        }
+        const [summary] = await db.select({
             totalRevenue: sql<string>`coalesce(sum(amount), '0')`,
             totalCommission: sql<string>`coalesce(sum(commission), '0')`,
             totalPayout: sql<string>`coalesce(sum(payout), '0')`,
             transactionCount: sql<number>`count(*)`,
-        }).from(transactions)
-        .where(gte(transactions.createdAt, daysAgo));
-
-        if (clientId) {
-            summaryQuery = summaryQuery.where(and(
-                gte(transactions.createdAt, daysAgo),
-                eq(transactions.clientId, parseInt(clientId))
-            ));
-        }
-
-        const [summary] = await summaryQuery;
+        })
+        .from(transactions)
+        .where(and(...summaryFilters));
 
         return NextResponse.json({
             period: parseInt(period),

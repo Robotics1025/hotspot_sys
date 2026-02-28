@@ -21,7 +21,7 @@ export async function GET(req: Request) {
             ? and(baseCondition, eq(vouchers.status, status as "unused" | "active" | "expired"))
             : baseCondition;
 
-        const clientVouchers = await db.select({
+        let query = db.select({
             id: vouchers.id,
             code: vouchers.code,
             status: vouchers.status,
@@ -36,7 +36,7 @@ export async function GET(req: Request) {
         })
         .from(vouchers)
         .leftJoin(plans, eq(vouchers.planId, plans.id))
-        .where(whereCondition)
+        .where(eq(vouchers.clientId, parseInt(clientId)))
         .orderBy(desc(vouchers.createdAt));
 
         return NextResponse.json(clientVouchers);
@@ -72,9 +72,9 @@ export async function POST(req: Request) {
 
         const newVouchers = await db.insert(vouchers).values(vouchersToCreate).returning();
 
-        return NextResponse.json({ 
+        return NextResponse.json({
             message: `Generated ${quantity} vouchers successfully`,
-            vouchers: newVouchers 
+            vouchers: newVouchers
         });
     } catch (error) {
         console.error("Error generating vouchers:", error);

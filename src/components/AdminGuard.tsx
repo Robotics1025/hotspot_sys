@@ -3,32 +3,41 @@
 import { useRouter } from "next/navigation"
 import { useEffect, useState } from "react"
 
+const isBrowser = typeof window !== "undefined";
+
 interface AdminGuardProps {
-  children: React.ReactNode
+  children: React.ReactNode;
 }
 
 export function AdminGuard({ children }: AdminGuardProps) {
-  const router = useRouter()
-  const [authorized, setAuthorized] = useState(false)
-  const [checked, setChecked] = useState(false)
+  const router = useRouter();
+  const [authorized, setAuthorized] = useState(false);
+  const [checked, setChecked] = useState(false);
 
   useEffect(() => {
     fetch("/api/auth/me")
       .then(async (res) => {
-        if (!res.ok) { router.replace("/admin/login"); return }
-        const data = await res.json()
+        if (!res.ok) { router.replace("/admin/login"); return; }
+        const data = await res.json();
         if (data?.user?.role === "super_admin") {
-          setAuthorized(true)
+          setAuthorized(true);
         } else {
-          router.replace("/admin/login")
+          router.replace("/admin/login");
         }
       })
       .catch(() => router.replace("/admin/login"))
-      .finally(() => setChecked(true))
-  }, [router])
+      .finally(() => setChecked(true));
+  }, [router]);
 
-  if (!checked || !authorized) return null
+  if (!isBrowser || !checked || !authorized) {
+    return null;
+  }
 
-  return <>{children}</>
+  const session = window.localStorage.getItem("fastnet_session");
+  if (session !== "admin_active") {
+    return null;
+  }
+
+  return <>{children}</>;
 }
 

@@ -13,7 +13,16 @@ export async function GET(req: Request) {
         const limit = parseInt(searchParams.get('limit') || '50');
         const offset = (page - 1) * limit;
 
-        let query = db.select({
+        // Add filters
+        const conditions = [];
+        if (clientId) {
+            conditions.push(eq(vouchers.clientId, parseInt(clientId)));
+        }
+        if (status) {
+            conditions.push(eq(vouchers.status, status as any));
+        }
+
+        const allVouchers = await db.select({
             id: vouchers.id,
             code: vouchers.code,
             status: vouchers.status,
@@ -25,34 +34,18 @@ export async function GET(req: Request) {
             planPrice: plans.price,
             planDuration: plans.duration,
         })
-        .from(vouchers)
-        .leftJoin(clients, eq(vouchers.clientId, clients.id))
-        .leftJoin(plans, eq(vouchers.planId, plans.id))
-        .orderBy(desc(vouchers.createdAt))
-        .limit(limit)
-        .offset(offset);
-
-        // Add filters
-        const conditions = [];
-        if (clientId) {
-            conditions.push(eq(vouchers.clientId, parseInt(clientId)));
-        }
-        if (status) {
-            conditions.push(eq(vouchers.status, status as any));
-        }
-        
-        if (conditions.length > 0) {
-            query = query.where(and(...conditions));
-        }
-
-        const allVouchers = await query;
+            .from(vouchers)
+            .leftJoin(clients, eq(vouchers.clientId, clients.id))
+            .leftJoin(plans, eq(vouchers.planId, plans.id))
+            .where(conditions.length > 0 ? and(...conditions) : undefined)
+            .orderBy(desc(vouchers.createdAt))
+            .limit(limit)
+            .offset(offset);
 
         // Get total count for pagination
-        let countQuery = db.select({ count: sql<number>`count(*)` }).from(vouchers);
-        if (conditions.length > 0) {
-            countQuery = countQuery.where(and(...conditions));
-        }
-        const [{ count }] = await countQuery;
+        const [{ count }] = await db.select({ count: sql<number>`count(*)` })
+            .from(vouchers)
+            .where(conditions.length > 0 ? and(...conditions) : undefined);
 
         // Status counts (unfiltered by status, but filtered by clientId if set)
         const statusCountsRaw = await (clientId
@@ -109,9 +102,9 @@ export async function POST(req: Request) {
 
         const newVouchers = await db.insert(vouchers).values(vouchersToCreate).returning();
 
-        return NextResponse.json({ 
+        return NextResponse.json({
             message: `Generated ${quantity} vouchers successfully`,
-            vouchers: newVouchers 
+            vouchers: newVouchers
         });
     } catch (error) {
         console.error("Error creating vouchers:", error);
