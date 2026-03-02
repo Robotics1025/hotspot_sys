@@ -4,6 +4,7 @@ import DashboardLayout from "@/components/DashboardLayout"
 // import { AdminGuard } from "@/components/AdminGuard"
 import { Building2, Plus, Phone, Calendar, MoreVertical, X, Copy, Check, Loader2, Eye, EyeOff, AlertCircle, CheckCircle2, Trash2 } from "lucide-react"
 import { useState, useEffect, useRef } from "react"
+import { useRouter } from "next/navigation"
 
 interface Client {
     id: number
@@ -38,17 +39,27 @@ export default function AdminClients() {
     const [showModal, setShowModal]       = useState(false)
     const [formName, setFormName]         = useState("")
     const [formPhone, setFormPhone]       = useState("")
+    const [formRouterName, setFormRouterName] = useState("")
+    const [formRouterIP, setFormRouterIP] = useState("")
+    const [formRouterSecret, setFormRouterSecret] = useState("")
+    const [formRouterVersion, setFormRouterVersion] = useState("v7")
     const [submitting, setSubmitting]     = useState(false)
     const [formError, setFormError]       = useState("")
 
-    // Credentials reveal modal
+    // Credentials and router reveal modal
     const [credentials, setCredentials]   = useState<Credentials | null>(null)
+    const [routerInfo, setRouterInfo]     = useState<any | null>(null)
     const [showPassword, setShowPassword] = useState(false)
 
     // Delete
     const [deletingId, setDeletingId]     = useState<number | null>(null)
     const [openMenuId, setOpenMenuId]     = useState<number | null>(null)
+    const [confirmDeleteId, setConfirmDeleteId] = useState<number | null>(null)
     const menuRef = useRef<HTMLDivElement>(null)
+
+    // Notification
+    const [notification, setNotification] = useState<string | null>(null)
+    const router = useRouter()
 
     useEffect(() => {
         fetchClients()
@@ -75,9 +86,11 @@ export default function AdminClients() {
     async function handleCreate(e: React.FormEvent) {
         e.preventDefault()
         if (!formName.trim()) { setFormError("Business name is required"); return }
+        if (!formRouterName.trim() || !formRouterSecret.trim()) { setFormError("Router name and secret are required"); return }
         setSubmitting(true)
         setFormError("")
         try {
+            // 1. Create client
             const res = await fetch("/api/admin/clients", {
                 method: "POST",
                 headers: { "Content-Type": "application/json" },
@@ -85,20 +98,44 @@ export default function AdminClients() {
             })
             const data = await res.json()
             if (!res.ok) { setFormError(data.error ?? "Failed to create client"); return }
-            setClients(prev => [data.client, ...prev])
-            setCredentials(data.credentials)
+            const client = data.client
+            // 2. Add router for this client
+            const routerRes = await fetch("/api/admin/routers", {
+                method: "POST",
+                headers: { "Content-Type": "application/json" },
+                body: JSON.stringify({
+                    clientId: client.id,
+                    name: formRouterName.trim(),
+                    ip: formRouterIP.trim() || null,
+                    secret: formRouterSecret.trim(),
+                    version: formRouterVersion,
+                }),
+            })
+            const routerData = await routerRes.json()
+            if (!routerRes.ok) { setFormError(routerData.error ?? "Failed to add router"); return }
+            setClients(prev => [client, ...prev])
+            // Redirect to client detail page with credentials in query
+            router.push(`/admin/clients/${client.id}?password=${encodeURIComponent(data.credentials.password)}`)
             setShowModal(false)
-            setFormName(""); setFormPhone("")
+            setFormName(""); setFormPhone(""); setFormRouterName(""); setFormRouterIP(""); setFormRouterSecret(""); setFormRouterVersion("v7")
         } catch { setFormError("Network error. Please try again.") }
         finally { setSubmitting(false) }
     }
 
     async function handleDelete(clientId: number) {
-        if (!confirm("Delete this client? This cannot be undone.")) return
+        setConfirmDeleteId(clientId)
+    }
+
+    async function confirmDelete(clientId: number) {
         setDeletingId(clientId)
+        setConfirmDeleteId(null)
         try {
             const res = await fetch(`/api/admin/clients?id=${clientId}`, { method: "DELETE" })
-            if (res.ok) setClients(prev => prev.filter(c => c.id !== clientId))
+            if (res.ok) {
+                setClients(prev => prev.filter(c => c.id !== clientId))
+                setNotification("Client has been successfully deleted.")
+                setTimeout(() => setNotification(null), 3000)
+            }
         } catch {}
         finally { setDeletingId(null); setOpenMenuId(null) }
     }
@@ -198,6 +235,37 @@ export default function AdminClients() {
                                                         </button>
                                                     </div>
                                                 )}
+                                                {/* Custom Delete Confirmation Modal */}
+                                                {confirmDeleteId === client.id && (
+                                                    <div className="fixed inset-0 z-[999] flex items-center justify-center px-4">
+                                                        <div className="absolute inset-0 bg-black/40 backdrop-blur-md animate-in fade-in" onClick={() => setConfirmDeleteId(null)} />
+                                                        <div className="relative w-full max-w-md bg-white rounded-[40px] shadow-2xl overflow-hidden animate-in zoom-in-95 border border-white/20">
+                                                            <div className="p-8 pb-0 flex items-center justify-between">
+                                                                <h2 className="text-2xl font-bold font-outfit text-gray-900">Delete Client</h2>
+                                                                <button onClick={() => setConfirmDeleteId(null)} className="p-2 text-gray-400 hover:bg-gray-100 rounded-xl transition-colors">
+                                                                    <X className="w-5 h-5" />
+                                                                </button>
+                                                            </div>
+                                                            <div className="p-8 pt-4">
+                                                                <p className="text-gray-700 mb-6">Are you sure you want to delete this client? <b>This cannot be undone.</b></p>
+                                                                <div className="flex gap-4 justify-end">
+                                                                    <button
+                                                                        onClick={() => setConfirmDeleteId(null)}
+                                                                        className="px-6 py-2 rounded-2xl bg-gray-100 text-gray-700 font-bold hover:bg-gray-200 transition-all"
+                                                                    >
+                                                                        Cancel
+                                                                    </button>
+                                                                    <button
+                                                                        onClick={() => confirmDelete(client.id)}
+                                                                        className="px-6 py-2 rounded-2xl bg-rose-600 text-white font-bold hover:bg-rose-700 transition-all"
+                                                                    >
+                                                                        Delete
+                                                                    </button>
+                                                                </div>
+                                                            </div>
+                                                        </div>
+                                                    </div>
+                                                )}
                                             </div>
                                         </td>
                                     </tr>
@@ -240,19 +308,52 @@ export default function AdminClients() {
 
                             <div>
                                 <label className="text-xs font-black text-gray-500 uppercase tracking-wider block mb-2">Payout Phone Number</label>
-                                <input
-                                    type="tel"
-                                    value={formPhone}
-                                    onChange={e => setFormPhone(e.target.value)}
-                                    placeholder="e.g. 0712345678"
-                                    className="w-full px-4 py-3.5 bg-gray-50 border border-gray-200 rounded-2xl text-sm font-medium focus:outline-none focus:border-orange-500 focus:bg-white transition-all"
-                                />
-                                <p className="text-xs text-gray-400 mt-1.5">Mobile money number for payouts</p>
+                                <div className="relative">
+                                    <span className="absolute left-4 top-1/2 -translate-y-1/2 text-orange-500 font-bold select-none">+256</span>
+                                    <input
+                                        type="tel"
+                                        value={formPhone}
+                                        onChange={e => setFormPhone(e.target.value.replace(/[^0-9]/g, ""))}
+                                        placeholder="7XXXXXXXX"
+                                        className="w-full pl-16 pr-4 py-3.5 bg-gray-50 border border-gray-200 rounded-2xl text-sm font-medium focus:outline-none focus:border-orange-500 focus:bg-white transition-all"
+                                        maxLength={9}
+                                    />
+                                </div>
+                                <p className="text-xs text-gray-400 mt-1.5">Enter a valid Uganda phone number (without leading zero)</p>
                             </div>
-
-                            <div className="bg-orange-50 border border-orange-100 rounded-2xl p-4">
-                                <p className="text-xs font-bold text-orange-600 mb-1">Auto-generated credentials</p>
-                                <p className="text-xs text-orange-500">A login email and password will be generated automatically and shown once after creation.</p>
+                            <div className="bg-gray-100 border border-gray-200 rounded-2xl p-4 mt-2">
+                                <p className="text-xs font-bold text-gray-700 mb-1">Router Details (required)</p>
+                                <div className="flex flex-col gap-2">
+                                    <input
+                                        type="text"
+                                        value={formRouterName}
+                                        onChange={e => setFormRouterName(e.target.value)}
+                                        placeholder="Router Name"
+                                        className="w-full px-4 py-2 bg-white border border-gray-200 rounded-xl text-sm font-medium focus:outline-none focus:border-orange-500 focus:bg-white transition-all"
+                                    />
+                                    <input
+                                        type="text"
+                                        value={formRouterIP}
+                                        onChange={e => setFormRouterIP(e.target.value)}
+                                        placeholder="Router IP (optional)"
+                                        className="w-full px-4 py-2 bg-white border border-gray-200 rounded-xl text-sm font-medium focus:outline-none focus:border-orange-500 focus:bg-white transition-all"
+                                    />
+                                    <input
+                                        type="text"
+                                        value={formRouterSecret}
+                                        onChange={e => setFormRouterSecret(e.target.value)}
+                                        placeholder="RADIUS Secret"
+                                        className="w-full px-4 py-2 bg-white border border-gray-200 rounded-xl text-sm font-medium focus:outline-none focus:border-orange-500 focus:bg-white transition-all"
+                                    />
+                                    <select
+                                        value={formRouterVersion}
+                                        onChange={e => setFormRouterVersion(e.target.value)}
+                                        className="w-full px-4 py-2 bg-white border border-gray-200 rounded-xl text-sm font-medium focus:outline-none focus:border-orange-500 focus:bg-white transition-all"
+                                    >
+                                        <option value="v7">MikroTik v7</option>
+                                        <option value="v6">MikroTik v6</option>
+                                    </select>
+                                </div>
                             </div>
 
                             {formError && (
@@ -283,17 +384,16 @@ export default function AdminClients() {
                 </div>
             )}
 
-            {/* ── Credentials reveal modal ────────────────────────────────────── */}
-            {credentials && (
+            {/* ── Credentials and Router reveal modal ───────────────────────── */}
+            {credentials && routerInfo && (
                 <div className="fixed inset-0 z-50 flex items-center justify-center p-6">
-                    <div className="absolute inset-0 bg-black/50 backdrop-blur-sm" onClick={() => setCredentials(null)} />
+                    <div className="absolute inset-0 bg-black/50 backdrop-blur-sm" onClick={() => { setCredentials(null); setRouterInfo(null) }} />
                     <div className="relative bg-white rounded-[32px] shadow-2xl w-full max-w-md p-8 animate-in zoom-in-95 duration-200">
                         <div className="w-14 h-14 bg-emerald-100 rounded-2xl flex items-center justify-center mx-auto mb-5">
                             <CheckCircle2 className="w-7 h-7 text-emerald-500" />
                         </div>
-                        <h2 className="text-xl font-bold font-outfit text-gray-900 text-center mb-1">Client Created!</h2>
-                        <p className="text-sm text-gray-400 text-center mb-6">Save these credentials — the password won&apos;t be shown again.</p>
-
+                        <h2 className="text-xl font-bold font-outfit text-gray-900 text-center mb-1">Client & Router Created!</h2>
+                        <p className="text-sm text-gray-400 text-center mb-6">Save these credentials and router details — the password and secret won&apos;t be shown again.</p>
                         <div className="space-y-3 mb-6">
                             <div className="bg-gray-50 rounded-2xl px-4 py-3 border border-gray-100">
                                 <p className="text-[10px] font-black text-gray-400 uppercase tracking-wider mb-1">Login Email</p>
@@ -316,15 +416,36 @@ export default function AdminClients() {
                                     </div>
                                 </div>
                             </div>
+                            <div className="bg-gray-50 rounded-2xl px-4 py-3 border border-gray-100">
+                                <p className="text-[10px] font-black text-gray-400 uppercase tracking-wider mb-1">Router Name</p>
+                                <span className="text-sm font-bold text-gray-900">{routerInfo.name}</span>
+                            </div>
+                            <div className="bg-gray-50 rounded-2xl px-4 py-3 border border-gray-100">
+                                <p className="text-[10px] font-black text-gray-400 uppercase tracking-wider mb-1">Router IP</p>
+                                <span className="text-sm font-bold text-gray-900">{routerInfo.ip || 'N/A'}</span>
+                            </div>
+                            <div className="bg-gray-50 rounded-2xl px-4 py-3 border border-gray-100">
+                                <p className="text-[10px] font-black text-gray-400 uppercase tracking-wider mb-1">RADIUS Secret</p>
+                                <span className="text-sm font-bold text-gray-900">{routerInfo.secret}</span>
+                            </div>
+                            <div className="bg-gray-50 rounded-2xl px-4 py-3 border border-gray-100">
+                                <p className="text-[10px] font-black text-gray-400 uppercase tracking-wider mb-1">Firmware Version</p>
+                                <span className="text-sm font-bold text-gray-900">{routerInfo.version}</span>
+                            </div>
                         </div>
-
                         <button
-                            onClick={() => { setCredentials(null); setShowPassword(false) }}
+                            onClick={() => { setCredentials(null); setRouterInfo(null); setShowPassword(false) }}
                             className="w-full py-3.5 bg-[#111111] hover:bg-orange-500 text-white font-bold rounded-2xl transition-all"
                         >
-                            Done — I've saved these
+                            Done — I&apos;ve saved these
                         </button>
                     </div>
+                </div>
+            )}
+
+            {notification && (
+                <div className="fixed bottom-6 left-1/2 -translate-x-1/2 z-[1000] bg-emerald-600 text-white px-6 py-3 rounded-2xl shadow-lg font-bold animate-in fade-in">
+                    {notification}
                 </div>
             )}
 

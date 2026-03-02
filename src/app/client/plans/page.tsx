@@ -10,12 +10,9 @@ import { useState, useEffect } from "react"
 type Plan = {
     id: number;
     name: string;
-    duration: string;
-    speed: string;
+    duration: number;
     price: string | number;
-    active: boolean;
-    color?: string;
-    speedLimit?: string;
+    speedLimit?: string | null;
 };
 
 const cardColors = [
@@ -25,8 +22,12 @@ const cardColors = [
     "bg-emerald-100"
 ];
 
-function formatDuration(duration: string) {
-    return duration;
+function formatDuration(duration: number): string {
+    if (duration < 3600) return `${Math.round(duration / 60)} Minutes`
+    if (duration < 86400) return `${Math.round(duration / 3600)} Hours`
+    if (duration < 604800) return `${Math.round(duration / 86400)} Days`
+    if (duration < 2592000) return `${Math.round(duration / 604800)} Weeks`
+    return `${Math.round(duration / 2592000)} Months`
 }
 
 export default function PlansPage() {
@@ -40,7 +41,7 @@ export default function PlansPage() {
     const fetchPlans = async () => {
         try {
             setIsLoading(true)
-            const res = await fetch('/api/admin/plans')
+            const res = await fetch('/api/client/plans')
             const data = await res.json()
             if (res.ok) {
                 setPlans(data)
